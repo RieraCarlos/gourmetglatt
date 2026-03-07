@@ -19,13 +19,10 @@ const ReportGenerator: React.FC = () => {
         const tableData = products.map(p => [
             p.barcode,
             p.name,
-            p.category || 'N/A',
-            `$${p.price?.toFixed(2) || '0.00'}`,
-            p.stock.toString()
         ]);
 
         (doc as any).autoTable({
-            head: [['Código', 'Producto', 'Categoría', 'Precio', 'Stock']],
+            head: [['Código', 'Producto']],
             body: tableData,
             startY: 40,
             theme: 'grid',

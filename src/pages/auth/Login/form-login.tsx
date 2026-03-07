@@ -13,7 +13,7 @@ import { useLocation, useNavigate } from "react-router-dom"
 import { useAppDispatch } from "@/app/hook"
 import { setAuth, setError, setLoading } from "@/features/auth/authSlice"
 import { supabase } from "@/lib/supabase"
-import { LogIn } from "lucide-react"
+import { LogIn, Eye, EyeOff } from "lucide-react"
 
 export function LoginForm({
     className,
@@ -108,14 +108,23 @@ export function LoginForm({
                                         Forgot your password?
                                     </a>
                                 </div>
-                                <Input
-                                    id="password"
-                                    type={showPassword ? 'text' : 'password'}
-                                    required
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    placeholder="••••••••"
-                                />
+                                <div className="relative">
+                                    <Input
+                                        id="password"
+                                        type={showPassword ? 'text' : 'password'}
+                                        required
+                                        value={password}
+                                        onChange={(e) => setPassword(e.target.value)}
+                                        placeholder="••••••••"
+                                    />
+                                    <button
+                                        type="button"
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#747d42]"
+                                    >
+                                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                    </button>
+                                </div>
                             </Field>
                             <Field>
                                 <Button

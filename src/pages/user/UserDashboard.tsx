@@ -5,7 +5,6 @@ import { logout } from '../../features/auth/authSlice';
 import { Package, LogOut, Search, FileText, Bell } from 'lucide-react';
 import ProductCatalog from '../../components/ProductCatalog';
 import ReportGenerator from '../../components/ReportGenerator';
-import type { Product } from '../../types/database';
 
 const UserDashboard: React.FC = () => {
     const dispatch = useAppDispatch();

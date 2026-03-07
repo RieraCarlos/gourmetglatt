@@ -60,10 +60,8 @@ import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import {
     Drawer,
-    DrawerClose,
     DrawerContent,
     DrawerDescription,
-    DrawerFooter,
     DrawerHeader,
     DrawerTitle,
     DrawerTrigger,
@@ -361,9 +359,9 @@ function TableCellViewer({ item }: { item: StockData }) {
                                     Stock Evolution <IconTrendingUp className="size-4" />
                                 </div>
                                 <div className="text-muted-foreground">
-                                    <strong>Blue line:</strong> Accumulated stock over time<br/>
-                                    <strong>Green bars:</strong> Individual entries<br/>
-                                    <strong>Gray bars:</strong> Individual outputs<br/>
+                                    <strong>Blue line:</strong> Accumulated stock over time<br />
+                                    <strong>Green bars:</strong> Individual entries<br />
+                                    <strong>Gray bars:</strong> Individual outputs<br />
                                     Current stock: <strong>{item.stock}</strong> units
                                 </div>
                             </div>
@@ -602,29 +600,29 @@ export function DataTable() {
                                         {headerGroup.headers.map((header) => {
                                             return (
                                                 <TableHead
-                                                        key={header.id}
-                                                        colSpan={header.colSpan}
-                                                        className={header.column.getCanSort() ? "cursor-pointer select-none" : undefined}
-                                                        onClick={
-                                                            header.column.getCanSort()
-                                                                ? header.column.getToggleSortingHandler()
-                                                                : undefined
-                                                        }
-                                                    >
-                                                        {header.isPlaceholder ? null : (
-                                                            <div className="flex items-center gap-1">
-                                                                {flexRender(
-                                                                    header.column.columnDef.header,
-                                                                    header.getContext()
-                                                                )}
-                                                                {header.column.getIsSorted()
-                                                                    ? header.column.getIsSorted() === "asc"
-                                                                        ? <IconChevronUp className="size-3" />
-                                                                        : <IconChevronDown className="size-3" />
-                                                                    : null}
-                                                            </div>
-                                                        )}
-                                                    </TableHead>
+                                                    key={header.id}
+                                                    colSpan={header.colSpan}
+                                                    className={header.column.getCanSort() ? "cursor-pointer select-none" : undefined}
+                                                    onClick={
+                                                        header.column.getCanSort()
+                                                            ? header.column.getToggleSortingHandler()
+                                                            : undefined
+                                                    }
+                                                >
+                                                    {header.isPlaceholder ? null : (
+                                                        <div className="flex items-center gap-1">
+                                                            {flexRender(
+                                                                header.column.columnDef.header,
+                                                                header.getContext()
+                                                            )}
+                                                            {header.column.getIsSorted()
+                                                                ? header.column.getIsSorted() === "asc"
+                                                                    ? <IconChevronUp className="size-3" />
+                                                                    : <IconChevronDown className="size-3" />
+                                                                : null}
+                                                        </div>
+                                                    )}
+                                                </TableHead>
                                             )
                                         })}
                                     </TableRow>
