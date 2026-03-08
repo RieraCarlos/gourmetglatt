@@ -32,6 +32,8 @@ import { supabase } from "@/lib/supabase"
 import { useAppDispatch } from "@/app/hook"
 import { logout } from "@/features/auth/authSlice"
 
+import { useNavigate } from "react-router-dom"
+
 export function NavUser({
     user,
 }: {
@@ -43,10 +45,17 @@ export function NavUser({
 }) {
     const { isMobile } = useSidebar()
     const dispatch = useAppDispatch()
+    const navigate = useNavigate()
 
-    const handleLogout = async () => {
-        await supabase.auth.signOut()
+    const handleLogout = () => {
+        // Ejecutar limpieza local e ir al login
         dispatch(logout())
+        navigate('/login', { replace: true })
+
+        // Cerrar sesión en el backend de Supabase en segundo plano
+        supabase.auth.signOut().catch((error) => {
+            console.error('Error signing out:', error)
+        })
     }
 
     return (
@@ -97,17 +106,12 @@ export function NavUser({
                                 <IconUserCircle />
                                 Account
                             </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                <IconCreditCard />
-                                Billing
-                            </DropdownMenuItem>
-                            <DropdownMenuItem>
-                                <IconNotification />
-                                Notifications
-                            </DropdownMenuItem>
                         </DropdownMenuGroup>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={handleLogout}>
+                        <DropdownMenuItem onSelect={(e) => {
+                            e.preventDefault()
+                            handleLogout()
+                        }}>
                             <IconLogout />
                             Log out
                         </DropdownMenuItem>

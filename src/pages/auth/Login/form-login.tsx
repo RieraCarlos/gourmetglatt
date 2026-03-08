@@ -58,6 +58,8 @@ export function LoginForm({
                         id: data.user.id,
                         email: data.user.email!,
                         role: profile.role,
+                        name: profile.name,
+                        avatar_url: profile.avatar_url,
                     },
                     session: data.session,
                 }));

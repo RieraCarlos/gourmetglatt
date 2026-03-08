@@ -20,26 +20,20 @@ const MovementDialog: React.FC<MovementDialogProps> = ({ onClose, initialType = 
     const [selectedProductId, setSelectedProductId] = useState('');
     const [quantity, setQuantity] = useState(1);
     const [isScanning, setIsScanning] = useState(false);
-    const [loading, setLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!selectedProductId || quantity <= 0 || !user) return;
 
-        setLoading(true);
-        try {
-            await dispatch(addMovement({
-                product_id: selectedProductId,
-                type,
-                quantity,
-                user_id: user.id
-            })).unwrap();
-            onClose();
-        } catch (err: any) {
-            alert(err || 'Error al registrar movimiento');
-        } finally {
-            setLoading(false);
-        }
+        // UI Optimista: No bloqueamos con await, disparamos y cerramos
+        dispatch(addMovement({
+            product_id: selectedProductId,
+            type,
+            quantity,
+            user_id: user.id
+        }));
+
+        onClose();
     };
 
     const handleScan = async (barcode: string) => {
@@ -157,20 +151,14 @@ const MovementDialog: React.FC<MovementDialogProps> = ({ onClose, initialType = 
                         </button>
                         <button
                             type="submit"
-                            disabled={loading || !selectedProductId}
+                            disabled={!selectedProductId}
                             className={`flex-[2] py-4 px-6 rounded-2xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 ${type === 'IN'
                                 ? 'bg-green-600 text-white shadow-green-600/20 hover:shadow-green-600/40 hover:-translate-y-0.5'
                                 : 'bg-destructive text-destructive-foreground shadow-destructive/20 hover:shadow-destructive/40 hover:-translate-y-0.5'
                                 } disabled:opacity-50 disabled:cursor-not-allowed`}
                         >
-                            {loading ? (
-                                <div className="w-6 h-6 border-2 border-white/30 border-t-white animate-spin rounded-full" />
-                            ) : (
-                                <>
-                                    <Save className="w-5 h-5" />
-                                    Registrar
-                                </>
-                            )}
+                            <Save className="w-5 h-5" />
+                            Registrar
                         </button>
                     </div>
                 </form>

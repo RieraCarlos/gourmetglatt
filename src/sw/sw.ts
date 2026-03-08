@@ -28,9 +28,9 @@ registerRoute(
     })
 );
 
-// Cache API requests from Supabase with a Network First strategy
+// Only cache Supabase REST (database) requests, NEVER Auth requests
 registerRoute(
-    ({ url }) => url.hostname.includes('supabase.co'),
+    ({ url }) => url.hostname.includes('supabase.co') && !url.pathname.startsWith('/auth/v1/'),
     new NetworkFirst({
         cacheName: 'supabase-api',
         plugins: [

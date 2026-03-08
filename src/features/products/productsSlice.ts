@@ -120,11 +120,24 @@ const productsSlice = createSlice({
             .addCase(addProduct.fulfilled, (state, action) => {
                 state.items.push(action.payload);
             })
+            .addCase(updateProduct.pending, (state, action) => {
+                // UI Optimista: Actualizamos el item localmente antes de que responda el servidor
+                const changes = action.meta.arg;
+                const index = state.items.findIndex((p) => p.id === changes.id);
+                if (index !== -1) {
+                    state.items[index] = { ...state.items[index], ...changes };
+                }
+            })
             .addCase(updateProduct.fulfilled, (state, action) => {
+                // Confirmamos con los datos reales que devolvió el servidor
                 const index = state.items.findIndex((p) => p.id === action.payload.id);
                 if (index !== -1) {
                     state.items[index] = action.payload;
                 }
+            })
+            .addCase(updateProduct.rejected, (state, action) => {
+                // Deshacer optimismo en la vida real requeriría restaurar el original, aquí solo mostramos error
+                state.error = action.payload as string;
             });
     },
 });

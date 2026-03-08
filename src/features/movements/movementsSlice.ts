@@ -36,28 +36,34 @@ export const fetchMovements = createAsyncThunk(
 
 export const addMovement = createAsyncThunk(
     'movements/addMovement',
-    async (movement: Omit<Movement, 'id' | 'created_at'>) => {
-        try {
-            // Local stock no longer maintained here since we removed it
-            if (!navigator.onLine) {
-                await queueMovement(movement);
-                return { ...movement, id: 'temp-' + Date.now(), created_at: new Date().toISOString(), offline: true } as any;
-            }
+    async (movement: Omit<Movement, 'id' | 'created_at'>, { dispatch }) => {
+        // UI Optimista: Creamos un registro temporal para que la UI reaccione instantáneamente
+        const tempMovement = { ...movement, id: 'temp-' + Date.now(), created_at: new Date().toISOString(), offline: true } as any;
 
-            const { data, error } = await supabase
-                .from('stock_movements')
-                .insert([movement])
-                .select()
-                .single();
+        // Ejecutar en segundo plano sin bloquear el retorno del Thunk
+        if (navigator.onLine) {
+            (async () => {
+                try {
+                    const { error } = await supabase
+                        .from('stock_movements')
+                        .insert([movement])
+                        .select('*, products(name, barcode)')
+                        .single();
 
-            if (error) throw error;
-
-            return data as Movement;
-        } catch (err: any) {
-            // If failed for other reasons (e.g. network timeout despite navigator.onLine being true)
+                    if (error) throw error;
+                    // Al tener éxito en segundo plano, actualizamos la lista real silenciosamente
+                    dispatch(fetchMovements());
+                } catch (err) {
+                    console.error('Error en sincronización en segundo plano. Encolando...', err);
+                    await queueMovement(movement);
+                }
+            })();
+        } else {
             await queueMovement(movement);
-            return { ...movement, id: 'temp-' + Date.now(), created_at: new Date().toISOString(), offline: true } as any;
         }
+
+        // Devolvemos el temporal en 0ms para que el reducer lo inserte de inmediato
+        return tempMovement;
     }
 );
 

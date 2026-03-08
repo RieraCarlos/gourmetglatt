@@ -1,16 +1,102 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
 import ProtectedRoute from './router/ProtectedRoute';
 import Login from './pages/auth/Login/pageLogin';
 import Home from './pages/Home';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import UserDashboard from './pages/user/PageSupervisor';
 import NotFound from './pages/NotFound';
-import { useAppSelector } from './app/hook';
+import { useAppSelector, useAppDispatch } from './app/hook';
+import { setAuth, setAuthReady, logout } from './features/auth/authSlice';
+import { supabase } from './lib/supabase';
 import OfflineStatus from './components/OfflineStatus';
 import { Toaster } from 'sonner';
 
 function App() {
-  const { user } = useAppSelector((state) => state.auth);
+  const { user, authReady } = useAppSelector((state) => state.auth);
+  const dispatch = useAppDispatch();
+
+  useEffect(() => {
+    console.log("[App.tsx] useEffect mounted. Setting up unified auth listener...");
+
+    // Helper: sincronizar el perfil del servidor en segundo plano (fire-and-forget)
+    const syncProfileInBackground = async (session: any) => {
+      try {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        console.log("[App.tsx] Background profile sync result:", profile);
+        if (profile) {
+          dispatch(setAuth({
+            user: {
+              id: session.user.id,
+              email: session.user.email!,
+              role: profile.role,
+              name: profile.name,
+              avatar_url: profile.avatar_url,
+            },
+            session: session,
+          }));
+        }
+      } catch (err) {
+        console.error("[App.tsx] Background profile sync failed (non-blocking):", err);
+      }
+    };
+
+    // Auth Bootstrap & Subscription (callback SÍNCRONO — sin async/await)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log(`[App.tsx] Auth event received: ${event}`, !!session);
+
+      if (event === 'INITIAL_SESSION') {
+        if (!session) {
+          // No hay sesión real → limpiar localStorage si tenía datos viejos
+          console.log("[App.tsx] INITIAL_SESSION: No session → logout");
+          dispatch(logout());
+        } else {
+          // 🔥 OPTIMISTIC AUTH BOOTSTRAP 🔥
+          // Sesión válida confirmada. Redux ya tiene el 'user' del localStorage.
+          // Disparamos la sincronización del perfil en segundo plano sin bloquear.
+          console.log("[App.tsx] INITIAL_SESSION: Valid session → unblock UI + sync profile in background");
+          syncProfileInBackground(session);
+        }
+        // SIEMPRE desbloquear la UI al finalizar INITIAL_SESSION
+        dispatch(setAuthReady(true));
+
+      } else if (event === 'SIGNED_IN' && session) {
+        // form-login.tsx ya actualizó Redux con el perfil completo
+        // Solo sincronizamos por si acaso (ej: login desde otra pestaña)
+        syncProfileInBackground(session);
+
+      } else if (event === 'TOKEN_REFRESHED' && session) {
+        // Token renovado en segundo plano — sincronizar perfil silenciosamente
+        syncProfileInBackground(session);
+
+      } else if (event === 'SIGNED_OUT') {
+        console.log("[App.tsx] SIGNED_OUT → logout");
+        dispatch(logout());
+      }
+    });
+
+    return () => {
+      console.log("[App.tsx] Unmounting unified auth listener");
+      subscription.unsubscribe();
+    };
+  }, [dispatch]);
+
+  // Loading Screen while verifying session
+  if (!authReady) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-10 w-10 animate-spin rounded-full border-4 border-[#747d42] border-t-transparent"></div>
+          <p className="text-sm text-muted-foreground animate-pulse">Iniciando aplicación...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <Router>
