@@ -29,3 +29,22 @@ export interface InventoryItem {
     output: number;
     stock: number;
 }
+
+export interface StockMovement {
+    id: string;
+    product_id: string;
+    type: "IN" | "OUT";
+    quantity: number;
+    user_id: string;
+    created_at: string;
+    customer: string;
+}
+
+export interface DetailedStockMovement {
+    product_name: string;
+    type: "IN" | "OUT";
+    quantity: number;
+    user_name: string;
+    formatted_date: string;
+    customer: string;
+}

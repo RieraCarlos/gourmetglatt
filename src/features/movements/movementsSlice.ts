@@ -1,10 +1,10 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import { supabase } from '../../lib/supabase';
-import type { Movement } from '../../app/types/database';
+import type { StockMovement, DetailedStockMovement } from '../../app/types/database';
 import { queueMovement, getQueuedMovements, dequeueMovement } from '../../lib/indexedDB';
 
 interface MovementsState {
-    items: Movement[];
+    items: DetailedStockMovement[];
     loading: boolean;
     error: string | null;
     isOnline: boolean;
@@ -22,9 +22,9 @@ export const fetchMovements = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const { data, error } = await supabase
-                .from('stock_movements')
-                .select('*, products(name, barcode)')
-                .order('created_at', { ascending: false });
+                .from('v_inventory_detailed')
+                .select('*')
+                .order('formatted_date', { ascending: false });
 
             if (error) throw error;
             return data as any[];
@@ -36,7 +36,7 @@ export const fetchMovements = createAsyncThunk(
 
 export const addMovement = createAsyncThunk(
     'movements/addMovement',
-    async (movement: Omit<Movement, 'id' | 'created_at'>, { dispatch }) => {
+    async (movement: Omit<StockMovement, 'id' | 'created_at'>, { dispatch }) => {
         // UI Optimista: Creamos un registro temporal para que la UI reaccione instantáneamente
         const tempMovement = { ...movement, id: 'temp-' + Date.now(), created_at: new Date().toISOString(), offline: true } as any;
 
@@ -82,11 +82,12 @@ export const adjustStock = createAsyncThunk(
             const state = getState() as any;
             const userId = state.auth?.user?.id || 'system-user';
 
-            const movement: Omit<Movement, 'id' | 'created_at'> = {
+            const movement: Omit<StockMovement, 'id' | 'created_at'> = {
                 product_id: productId,
                 type: movementType,
                 quantity: quantity,
                 user_id: userId,
+                customer: 'Sistema', // Automatically set for app adjustments
             };
 
             // Create the movement

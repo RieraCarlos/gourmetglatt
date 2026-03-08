@@ -3,7 +3,9 @@ import { ChartAreaInteractive } from "./componentSupervisor/chart-area-interacti
 import { DataTable } from "./componentSupervisor/data-table"
 import { SectionCards } from "./componentSupervisor/section-cards"
 import { SiteHeader } from "./componentSupervisor/site-header"
-import ScanInventory from "./ScanInventory"
+import ScanInventory from "./componentSupervisor/ScanInventory"
+import ProductCatalog from "@/components/ProductCatalog"
+import InventoryDashboard from "./componentSupervisor/DashboardPage"
 import {
     SidebarInset,
     SidebarProvider,
@@ -41,6 +43,8 @@ export default function Page() {
                                 }
                             />
                             <Route path="scan" element={<ScanInventory />} />
+                            <Route path="catalog" element={<ProductCatalog />} />
+                            <Route path="dashboard" element={<InventoryDashboard />} />
                         </Routes>
                     </div>
                 </div>
