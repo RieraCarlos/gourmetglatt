@@ -1,5 +1,5 @@
 import { useMemo } from "react"
-import { PieChart, Pie, Tooltip, Cell } from "recharts"
+import { PieChart, Pie, Tooltip, Cell, ResponsiveContainer } from "recharts"
 import type { DetailedStockMovement } from "@/app/types/database"
 
 interface Props {
@@ -29,28 +29,29 @@ export default function InventoryPieChart({ data }: Props) {
     }, [data])
 
     return (
-        <div className="rounded-2xl border p-4">
-
+        <div className="rounded-2xl border p-4 w-full overflow-hidden">
             <h3 className="text-lg font-semibold mb-4">
                 Distribución de Inventario
             </h3>
 
-            <PieChart width={400} height={300}>
-                <Pie
-                    data={chartData}
-                    dataKey="value"
-                    nameKey="name"
-                    outerRadius={120}
-                    label
-                >
-                    {chartData.map((_entry, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                    ))}
-                </Pie>
-
-                <Tooltip />
-            </PieChart>
-
+            <div className="h-[300px] w-full min-w-0">
+                <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                        <Pie
+                            data={chartData}
+                            dataKey="value"
+                            nameKey="name"
+                            outerRadius={100}
+                            label
+                        >
+                            {chartData.map((_entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                            ))}
+                        </Pie>
+                        <Tooltip />
+                    </PieChart>
+                </ResponsiveContainer>
+            </div>
         </div>
     )
 }
