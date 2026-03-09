@@ -45,11 +45,14 @@ import {
     IconGripVertical,
     IconLayoutColumns,
     IconTrendingUp,
+    IconDotsVertical,
+    IconEdit,
+    IconTrash,
 } from "@tabler/icons-react"
 import { Bar, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Line, ComposedChart } from "recharts"
 
 import { useAppDispatch, useAppSelector } from "@/app/hook"
-import { fetchStockMovements, fetchStockMovementsBatch } from "@/features/inventory/inventorySlice"
+import { fetchStockMovements, fetchStockMovementsBatch, fetchInventory } from "@/features/inventory/inventorySlice"
 import { useInventoryRealtime } from "@/hooks/useInventoryRealtime"
 import type { InventoryItem } from "@/app/types/database"
 import { inventorySchema } from "@/app/types/schemas"
@@ -70,8 +73,21 @@ import {
     DropdownMenu,
     DropdownMenuCheckboxItem,
     DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
+} from "@/components/ui/dialog"
+import { softDeleteProduct, updateProduct, fetchProducts } from "@/features/products/productsSlice"
+import { toast } from "sonner"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import {
@@ -98,7 +114,7 @@ type StockData = InventoryItem
 function DragHandle({ id }: { id: number | string }) {
     const { attributes, listeners } = useSortable({
         id,
-    })
+    } as any)
 
     return (
         <Button
@@ -111,6 +127,149 @@ function DragHandle({ id }: { id: number | string }) {
             <IconGripVertical className="size-3 text-muted-foreground" />
             <span className="sr-only">Drag to reorder</span>
         </Button>
+    )
+}
+
+function ActionsCell({ item }: { item: StockData }) {
+    const dispatch = useAppDispatch()
+    const { user } = useAppSelector(s => s.auth)
+    const { items: products } = useAppSelector(s => s.products)
+
+    // We get the actual product config so we can edit
+    const product = React.useMemo(() => products.find(p => p.id === item.id.toString()), [products, item.id])
+
+    const [isEditOpen, setIsEditOpen] = React.useState(false)
+    const [isDeleteOpen, setIsDeleteOpen] = React.useState(false)
+
+    const [editName, setEditName] = React.useState("")
+    const [editDesc, setEditDesc] = React.useState("")
+    const [isSubmitting, setIsSubmitting] = React.useState(false)
+
+    React.useEffect(() => {
+        if (isEditOpen && product) {
+            setEditName(product.name)
+            setEditDesc(product.description || "")
+        }
+    }, [isEditOpen, product])
+
+    const handleEditSave = async (e: React.FormEvent) => {
+        e.preventDefault()
+        if (!product) return
+        setIsSubmitting(true)
+        try {
+            await dispatch(updateProduct({
+                id: product.id,
+                name: editName,
+                description: editDesc,
+            })).unwrap()
+            await dispatch(fetchInventory()).unwrap()
+            toast.success("Producto actualizado exitosamente")
+            setIsEditOpen(false)
+        } catch (error: any) {
+            toast.error(error.message || "Error al actualizar")
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    const handleDelete = async () => {
+        if (!user || (!product && !item.id)) return
+        setIsSubmitting(true)
+        try {
+            await dispatch(softDeleteProduct({
+                id: item.id.toString(),
+                user_id: user.id
+            })).unwrap()
+            await dispatch(fetchInventory()).unwrap()
+            toast.success("Producto eliminado exitosamente")
+            setIsDeleteOpen(false)
+        } catch (error: any) {
+            toast.error(error.message || "Error al eliminar")
+        } finally {
+            setIsSubmitting(false)
+        }
+    }
+
+    if (!user || (user.role !== 'admin' && user.role !== 'supervisor')) return null
+
+    return (
+        <>
+            <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" className="size-8 p-0">
+                        <span className="sr-only">Abrir menú</span>
+                        <IconDotsVertical className="size-4" />
+                    </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                    <DropdownMenuItem
+                        onSelect={(e) => { e.preventDefault(); setIsEditOpen(true) }}
+                        disabled={!product}
+                    >
+                        <IconEdit className="mr-2 size-4" />
+                        Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                        onSelect={(e) => { e.preventDefault(); setIsDeleteOpen(true) }}
+                        className="text-destructive focus:text-destructive"
+                    >
+                        <IconTrash className="mr-2 size-4" />
+                        Eliminar
+                    </DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+            <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Editar Producto</DialogTitle>
+                        <DialogDescription>
+                            Modifica el nombre y descripción del producto.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleEditSave} className="space-y-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-name">Nombre</Label>
+                            <Input
+                                id="edit-name"
+                                value={editName}
+                                onChange={e => setEditName(e.target.value)}
+                                required
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="edit-desc">Descripción</Label>
+                            <Input
+                                id="edit-desc"
+                                value={editDesc}
+                                onChange={e => setEditDesc(e.target.value)}
+                            />
+                        </div>
+                        <DialogFooter>
+                            <Button type="button" variant="outline" onClick={() => setIsEditOpen(false)}>Cancelar</Button>
+                            <Button type="submit" disabled={isSubmitting}>Guardar</Button>
+                        </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Confirmar Eliminación</DialogTitle>
+                        <DialogDescription>
+                            ¿Estás seguro de que deseas eliminar este producto? Esta acción lo removerá de las vistas activas.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter>
+                        <Button type="button" variant="outline" onClick={() => setIsDeleteOpen(false)}>Cancelar</Button>
+                        <Button type="button" variant="destructive" onClick={handleDelete} disabled={isSubmitting}>Eliminar</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
     )
 }
 
@@ -149,12 +308,16 @@ const columns: ColumnDef<StockData>[] = [
             )
         },
     },
+    {
+        id: "actions",
+        cell: ({ row }) => <ActionsCell item={row.original} />,
+    },
 ]
 
 function DraggableRow({ row }: { row: Row<StockData> }) {
     const { transform, transition, setNodeRef, isDragging } = useSortable({
         id: row.original.id,
-    })
+    } as any)
 
     return (
         <TableRow
@@ -432,6 +595,11 @@ export function DataTable() {
     React.useEffect(() => {
         setLocalData(data)
     }, [data])
+
+    // Fetch base products for Edit mapping
+    React.useEffect(() => {
+        dispatch(fetchProducts())
+    }, [dispatch])
 
     // Schema validation
     React.useEffect(() => {

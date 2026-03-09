@@ -120,7 +120,7 @@ export const schema = z.object({
 function DragHandle({ id }: { id: number }) {
     const { attributes, listeners } = useSortable({
         id,
-    })
+    } as any)
 
     return (
         <Button
@@ -314,7 +314,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
 function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
     const { transform, transition, setNodeRef, isDragging } = useSortable({
         id: row.original.id,
-    })
+    } as any)
 
     return (
         <TableRow

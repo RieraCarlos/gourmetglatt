@@ -2,6 +2,7 @@ import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
 import type { PayloadAction } from '@reduxjs/toolkit';
 import { supabase } from '../../lib/supabase';
 import type { InventoryItem, Movement } from '../../app/types/database';
+import { softDeleteProduct } from '../products/productsSlice';
 
 interface InventoryState {
     items: InventoryItem[];
@@ -20,93 +21,18 @@ interface InventoryState {
     todayTotalsLastFetch: number | null; // Última vez que se cargaron los totales diarios
 }
 
-// Load from localStorage on init
-const getInitialItems = (): InventoryItem[] => {
-    try {
-        const cached = localStorage.getItem('inventory_items');
-        return cached ? JSON.parse(cached) : [];
-    } catch {
-        return [];
-    }
-};
-
-const getInitialLastFetch = (): number | null => {
-    try {
-        const last = localStorage.getItem('inventory_lastFetch');
-        return last ? parseInt(last, 10) : null;
-    } catch {
-        return null;
-    }
-};
-
-const getInitialStockMovements = (): Record<string, Movement[]> => {
-    try {
-        const cached = localStorage.getItem('stock_movements');
-        return cached ? JSON.parse(cached) : {};
-    } catch {
-        return {};
-    }
-};
-
-const getInitialMovementsLoading = (): Record<string, boolean> => {
-    try {
-        const cached = localStorage.getItem('movements_loading');
-        return cached ? JSON.parse(cached) : {};
-    } catch {
-        return {};
-    }
-};
-
-const getInitialMovementsError = (): Record<string, string | null> => {
-    try {
-        const cached = localStorage.getItem('movements_error');
-        return cached ? JSON.parse(cached) : {};
-    } catch {
-        return {};
-    }
-};
-
-const getInitialMovementsLastFetch = (): Record<string, number> => {
-    try {
-        const cached = localStorage.getItem('movements_last_fetch');
-        return cached ? JSON.parse(cached) : {};
-    } catch {
-        return {};
-    }
-};
-
-const getInitialTodayTotals = (): { out: number; in: number } => {
-    try {
-        const cached = localStorage.getItem('today_totals');
-        console.log('Loading today totals from localStorage', cached ? JSON.parse(cached) : { out: 0, in: 0 });
-
-        return cached ? JSON.parse(cached) : { out: 0, in: 0 };
-    } catch {
-        return { out: 0, in: 0 };
-    }
-};
-
-const getInitialTodayTotalsLastFetch = (): number | null => {
-    try {
-        const cached = localStorage.getItem('today_totals_last_fetch');
-        return cached ? parseInt(cached, 10) : null;
-    } catch {
-        return null;
-    }
-};
-
 const initialState: InventoryState = {
-    items: getInitialItems(),
+    items: [],
     loading: false,
     error: null,
-    lastFetch: getInitialLastFetch(),
-    stockMovements: getInitialStockMovements(),
-    movementsLoading: getInitialMovementsLoading(),
-    movementsError: getInitialMovementsError(),
-    movementsLastFetch: getInitialMovementsLastFetch(),
+    lastFetch: null,
+    stockMovements: {},
+    movementsLoading: {},
+    movementsError: {},
+    movementsLastFetch: {},
     batchMovementsLoading: false,
-    todayTotals: getInitialTodayTotals(),
-    todayTotalsLastFetch: getInitialTodayTotalsLastFetch(),
+    todayTotals: { out: 0, in: 0 },
+    todayTotalsLastFetch: null,
 };
 
 export const fetchInventory = createAsyncThunk<
@@ -125,10 +51,6 @@ export const fetchInventory = createAsyncThunk<
         }
 
         const inventoryData = (data || []) as InventoryItem[];
-
-        // Save to localStorage
-        localStorage.setItem('inventory_items', JSON.stringify(inventoryData));
-        localStorage.setItem('inventory_lastFetch', Date.now().toString());
 
         return inventoryData;
     } catch (err: any) {
@@ -255,11 +177,6 @@ const inventorySlice = createSlice({
             delete state.movementsLoading[productId];
             delete state.movementsError[productId];
             delete state.movementsLastFetch[productId];
-            // Update localStorage
-            localStorage.setItem('stock_movements', JSON.stringify(state.stockMovements));
-            localStorage.setItem('movements_loading', JSON.stringify(state.movementsLoading));
-            localStorage.setItem('movements_error', JSON.stringify(state.movementsError));
-            localStorage.setItem('movements_last_fetch', JSON.stringify(state.movementsLastFetch));
         },
         // Update inventory item locally
         updateInventoryItemLocally: (state, action: PayloadAction<{ id: string | number; changes: Partial<InventoryItem> }>) => {
@@ -267,8 +184,6 @@ const inventorySlice = createSlice({
             const itemIndex = state.items.findIndex(item => item.id === id);
             if (itemIndex !== -1) {
                 state.items[itemIndex] = { ...state.items[itemIndex], ...changes };
-                // Update localStorage
-                localStorage.setItem('inventory_items', JSON.stringify(state.items));
             }
         },
     },
@@ -294,44 +209,29 @@ const inventorySlice = createSlice({
                 const productId = action.meta.arg;
                 state.movementsLoading[productId] = true;
                 state.movementsError[productId] = null;
-                // Save loading state to localStorage
-                localStorage.setItem('movements_loading', JSON.stringify(state.movementsLoading));
             })
             .addCase(fetchStockMovements.fulfilled, (state, action) => {
                 const productId = action.meta.arg;
                 state.stockMovements[productId] = action.payload;
                 state.movementsLoading[productId] = false;
                 state.movementsLastFetch[productId] = Date.now();
-                // Save movements, loading state and last fetch to localStorage
-                localStorage.setItem('stock_movements', JSON.stringify(state.stockMovements));
-                localStorage.setItem('movements_loading', JSON.stringify(state.movementsLoading));
-                localStorage.setItem('movements_last_fetch', JSON.stringify(state.movementsLastFetch));
             })
             .addCase(fetchStockMovements.rejected, (state, action) => {
                 const productId = action.meta.arg;
                 state.movementsLoading[productId] = false;
                 state.movementsError[productId] = action.payload || action.error.message || null;
-                // Save loading state and error to localStorage
-                localStorage.setItem('movements_loading', JSON.stringify(state.movementsLoading));
-                localStorage.setItem('movements_error', JSON.stringify(state.movementsError));
             })
             .addCase(fetchStockMovementsBatch.pending, (state) => {
                 state.batchMovementsLoading = true;
             })
             .addCase(fetchStockMovementsBatch.fulfilled, (state, action) => {
                 state.batchMovementsLoading = false;
-                // Update movements for each product
                 action.payload.forEach(({ productId, movements }) => {
                     state.stockMovements[productId] = movements;
                     state.movementsLastFetch[productId] = Date.now();
                     state.movementsLoading[productId] = false;
                     state.movementsError[productId] = null;
                 });
-                // Save to localStorage
-                localStorage.setItem('stock_movements', JSON.stringify(state.stockMovements));
-                localStorage.setItem('movements_last_fetch', JSON.stringify(state.movementsLastFetch));
-                localStorage.setItem('movements_loading', JSON.stringify(state.movementsLoading));
-                localStorage.setItem('movements_error', JSON.stringify(state.movementsError));
             })
             .addCase(fetchStockMovementsBatch.rejected, (state, action) => {
                 state.batchMovementsLoading = false;
@@ -340,12 +240,18 @@ const inventorySlice = createSlice({
             .addCase(fetchTodayTotals.fulfilled, (state, action) => {
                 state.todayTotals = action.payload;
                 state.todayTotalsLastFetch = Date.now();
-                // Save to localStorage
-                localStorage.setItem('today_totals', JSON.stringify(action.payload));
-                localStorage.setItem('today_totals_last_fetch', Date.now().toString());
             })
             .addCase(fetchTodayTotals.rejected, (state, action) => {
                 state.error = action.payload || action.error.message || null;
+            })
+            .addCase(softDeleteProduct.fulfilled, (state, action) => {
+                // Sincronización optimista ultra-rápida: Al completarse el borrado
+                // sacamos el ítem inmediatamente de `state.items`
+                const deletedProductId = action.payload;
+                state.items = state.items.filter(item => item.id.toString() !== deletedProductId);
+
+                // Forzar la recarga futura si alguien llama a la vista 
+                state.lastFetch = null;
             });
     },
 });

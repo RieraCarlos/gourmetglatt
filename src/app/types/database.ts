@@ -11,6 +11,8 @@ export interface Product {
     name: string;
     description: string | null;
     created_at: string;
+    deleted_at?: string | null;
+    deleted_by?: string | null;
 }
 
 export interface Movement {
@@ -37,14 +39,15 @@ export interface StockMovement {
     quantity: number;
     user_id: string;
     created_at: string;
-    customer: string;
+    customer?: string | null;
 }
 
-export interface DetailedStockMovement {
+export interface DetailedStockMovement extends StockMovement {
     product_name: string;
-    type: "IN" | "OUT";
-    quantity: number;
     user_name: string;
     formatted_date: string;
-    customer: string;
+    products?: {
+        name: string;
+        barcode: string;
+    };
 }

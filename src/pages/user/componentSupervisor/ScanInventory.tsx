@@ -26,11 +26,11 @@ export default function ScanInventory() {
         // Iniciar la verificación inmediatamente y ocultar la cámara
         setIsScanning(false);
         setIsVerifying(true);
-        console.log('Código de barras', barcode);
+
         try {
             const resultAction = await dispatch(fetchProductByBarcode(barcode)).unwrap();
             // Producto encontrado, pasamos el objeto al StockMovementForm
-            console.log('Producto encontrado', resultAction);
+
             setExistingProduct(resultAction);
         } catch (err: any) {
             // Producto no encontrado, guardamos el código y abrimos ProductForm nuevo

@@ -22,12 +22,21 @@ export const fetchMovements = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const { data, error } = await supabase
-                .from('v_inventory_detailed')
-                .select('*')
-                .order('formatted_date', { ascending: false });
+                .from('stock_movements')
+                .select('*, products(name, barcode), profiles(email)')
+                .order('created_at', { ascending: false });
 
             if (error) throw error;
-            return data as any[];
+
+            // Map the data to include flat fields for backward compatibility
+            const mappedData = (data as any[]).map(m => ({
+                ...m,
+                product_name: m.products?.name || 'Unknown Product',
+                user_name: m.profiles?.email || 'Unknown User',
+                formatted_date: new Date(m.created_at).toLocaleString()
+            }));
+
+            return mappedData;
         } catch (err: any) {
             return rejectWithValue(err.message);
         }

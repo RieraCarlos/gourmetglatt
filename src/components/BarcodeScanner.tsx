@@ -45,7 +45,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
                     scanning = true;
 
                     const decodedText = result.getText();
-                    console.log('✅ CÓDIGO DETECTADO:', decodedText);
+
 
                     // Reproducir un sonido corto o vibración si está disponible
                     if (navigator.vibrate && (!navigator.userActivation || navigator.userActivation.hasBeenActive)) {
@@ -90,7 +90,7 @@ const BarcodeScanner: React.FC<BarcodeScannerProps> = ({ onScan, onClose }) => {
     }, []);
 
     return (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/80 backdrop-blur-md p-4 animate-in fade-in duration-300">
             <div className="relative w-full max-w-lg bg-card rounded-3xl overflow-hidden shadow-2xl">
                 <div className="p-6 border-b border-border flex items-center justify-between">
                     <div>

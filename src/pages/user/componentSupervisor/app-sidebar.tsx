@@ -106,7 +106,7 @@ const data = {
     documents: [
         {
             name: "Reports",
-            url: "#",
+            url: "/supervisor/report",
             icon: IconReport,
         },
     ],

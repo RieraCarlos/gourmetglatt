@@ -1,46 +1,87 @@
-import { useEffect } from 'react'
+import { useEffect, useRef, useState, useCallback } from 'react'
 import { useAppDispatch } from '@/app/hook'
-import { fetchInventory } from '@/features/inventory/inventorySlice'
+import { fetchInventory, fetchTodayTotals } from '@/features/inventory/inventorySlice'
 import { supabase } from '@/lib/supabase'
 
 /**
  * Hook para subscribirse a cambios en tiempo real de inventario
- * Automáticamente dispara fetchInventory cuando hay cambios
+ * - Zero-Refresh Synchronization
+ * - Incluye Debounce para prevenir saturación del UI Thread
+ * - Auto-Reconexión en caso de desconexión del WebSocket
  */
 export function useInventoryRealtime() {
     const dispatch = useAppDispatch()
 
-    useEffect(() => {
-        // Debug log
-        console.log('Setting up inventory realtime subscription')
+    // Referencia para el debounce timer
+    const debounceTimer = useRef<NodeJS.Timeout | null>(null)
 
-        // Subscribe to inventory_view changes
-        const subscription = supabase
-            .channel('inventory_changes')
+    // Estado para forzar la reconexión
+    const [retryCount, setRetryCount] = useState(0)
+
+    // Agrupamos el refetch en una función memorizada que se retrasa ligeramente
+    const handleRealtimeChange = useCallback(() => {
+        if (debounceTimer.current) {
+            clearTimeout(debounceTimer.current)
+        }
+
+        // Debounce: 500ms window to batch rapid changes
+        debounceTimer.current = setTimeout(() => {
+
+
+            // Refresca UI invisiblemente en 2do plano sin recargar ventana
+            dispatch(fetchInventory())
+            dispatch(fetchTodayTotals()) // Fuerza métricas en SectionCards
+        }, 500)
+    }, [dispatch])
+
+    useEffect(() => {
+
+
+        const channel = supabase
+            .channel(`inventory_changes_${retryCount}`)
             .on(
                 'postgres_changes',
                 {
                     event: '*', // Escucha INSERT, UPDATE, DELETE
                     schema: 'public',
-                    table: 'inventory_view', // O la tabla principal de inventario
+                    table: 'products',
                 },
-                (payload) => {
-                    console.log('Inventory change detected:', payload)
-                    // Refetch inventory cuando hay cambios
-                    dispatch(fetchInventory())
+                () => {
+                    handleRealtimeChange()
+                }
+            )
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'stock_movements',
+                },
+                () => {
+                    handleRealtimeChange()
                 }
             )
             .subscribe((status) => {
                 if (status === 'SUBSCRIBED') {
-                    console.log('Subscribed to inventory changes')
-                } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-                    console.error('Failed to subscribe to inventory changes')
+
+                } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT' || status === 'CLOSED') {
+                    console.error(`[Realtime Sync] Connection lost (${status}). Auto-reconnecting...`)
+                    // Cleanup actual
+                    channel.unsubscribe()
+
+                    // Esperar 3 segundos e intentar reconectar (Exponential Backoff básico)
+                    setTimeout(() => {
+                        setRetryCount(prev => prev + 1)
+                    }, 3000)
                 }
             })
 
         return () => {
-            console.log('Cleaning up inventory realtime subscription')
-            subscription.unsubscribe()
+
+            if (debounceTimer.current) {
+                clearTimeout(debounceTimer.current)
+            }
+            channel.unsubscribe()
         }
-    }, [dispatch])
+    }, [handleRealtimeChange, retryCount])
 }

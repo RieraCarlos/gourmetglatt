@@ -152,7 +152,7 @@ const MovementDialog: React.FC<MovementDialogProps> = ({ onClose, initialType = 
                         <button
                             type="submit"
                             disabled={!selectedProductId}
-                            className={`flex-[2] py-4 px-6 rounded-2xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 ${type === 'IN'
+                            className={`flex-2 py-4 px-6 rounded-2xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 ${type === 'IN'
                                 ? 'bg-green-600 text-white shadow-green-600/20 hover:shadow-green-600/40 hover:-translate-y-0.5'
                                 : 'bg-destructive text-destructive-foreground shadow-destructive/20 hover:shadow-destructive/40 hover:-translate-y-0.5'
                                 } disabled:opacity-50 disabled:cursor-not-allowed`}

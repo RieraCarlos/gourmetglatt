@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useAppDispatch, useAppSelector } from '../app/hook';
 import { fetchProducts } from '../features/products/productsSlice';
+import { fetchInventory } from '../features/inventory/inventorySlice';
 import type { Product } from '@/app/types/database';
 import type { RootState } from '../app/store';
 import { Package, Search, AlertCircle, ShoppingCart, Plus, Edit2 } from 'lucide-react';
@@ -9,7 +10,7 @@ import ProductForm from './ProductForm';
 const ProductCatalog: React.FC = () => {
     const dispatch = useAppDispatch();
     const { items, loading, error } = useAppSelector((state: RootState) => state.products);
-    const { items: movements } = useAppSelector((state: RootState) => state.movements);
+    const { items: inventoryItems } = useAppSelector((state: RootState) => state.inventory);
     const { user } = useAppSelector((state: RootState) => state.auth);
 
     const [searchTerm, setSearchTerm] = useState('');
@@ -19,13 +20,13 @@ const ProductCatalog: React.FC = () => {
 
     useEffect(() => {
         dispatch(fetchProducts());
+        dispatch(fetchInventory());
     }, [dispatch]);
 
-    // Helper to calculate stock from movements
+    // Helper to get stock from the efficient view (inventory_view) instead of calculating from movements
     const getProductStock = (productId: string) => {
-        return movements
-            .filter(m => m.product_id === productId)
-            .reduce((total, m) => m.type === 'IN' ? total + m.quantity : total - m.quantity, 0);
+        const inv = inventoryItems.find(i => i.id.toString() === productId.toString())
+        return inv ? (inv.stock || 0) : 0
     };
 
     const filteredItems = items.filter((item: Product) => {
@@ -34,7 +35,7 @@ const ProductCatalog: React.FC = () => {
             item.barcode.includes(searchTerm);
 
         if (filter === 'low-stock') {
-            return matchesSearch && getProductStock(item.id) < 10;
+            return matchesSearch && getProductStock(item.id) < 20;
         }
         return matchesSearch;
     });
@@ -59,7 +60,7 @@ const ProductCatalog: React.FC = () => {
     }
 
     return (
-        <div className="space-y-6">
+        <div className="space-y-6 p-6">
             <div className="flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
                 <div className="relative w-full md:w-96 group">
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
@@ -81,7 +82,7 @@ const ProductCatalog: React.FC = () => {
                             }`}
                     >
                         <AlertCircle className="w-4 h-4" />
-                        {filter === 'low-stock' ? 'Viendo Stock Bajo' : 'Stock Bajo'}
+                        {filter === 'low-stock' ? 'Viendo Low stock' : 'Low stock'}
                     </button>
 
                     {user?.role === 'admin' && (
@@ -109,9 +110,9 @@ const ProductCatalog: React.FC = () => {
                         key={item.id}
                         className="group relative bg-card border border-border rounded-2xl overflow-hidden hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
                     >
-                        <div className="aspect-square bg-secondary/50 flex items-center justify-center overflow-hidden">
+                        <div className="aspect-square bg-secondary/50 flex items-center h-24 w-full justify-center overflow-hidden">
                             <Package className="w-16 h-16 text-muted-foreground/30 group-hover:scale-110 transition-transform duration-500" />
-                            {getProductStock(item.id) < 10 && (
+                            {getProductStock(item.id) < 20 && (
                                 <div className="absolute top-3 right-3 px-2 py-1 rounded-lg bg-destructive text-destructive-foreground text-[10px] font-bold uppercase tracking-wider shadow-lg">
                                     Bajo Stock
                                 </div>
@@ -128,15 +129,15 @@ const ProductCatalog: React.FC = () => {
                                 </div>
                             </div>
 
-                            <p className="text-sm text-muted-foreground line-clamp-2 min-h-[40px]">
+                            <p className="text-sm text-muted-foreground line-clamp-2 min-h-[5px]">
                                 {item.description || 'Sin descripción disponible.'}
                             </p>
 
                             <div className="pt-4 flex items-center justify-between border-t border-border mt-4">
                                 <div className="space-y-0.5">
-                                    <p className="text-xs text-muted-foreground">Existencias</p>
-                                    <p className={`text-xl font-black ${getProductStock(item.id) < 10 ? 'text-destructive' : 'text-foreground'}`}>
-                                        {getProductStock(item.id)} <span className="text-xs font-medium text-muted-foreground">uds</span>
+                                    <p className="text-xs text-muted-foreground">Amount</p>
+                                    <p className={`text-xl font-black ${getProductStock(item.id) < 20 ? 'text-destructive' : 'text-foreground'}`}>
+                                        {getProductStock(item.id)} <span className="text-xs font-medium text-muted-foreground">units</span>
                                     </p>
                                 </div>
                                 {user?.role === 'admin' && (

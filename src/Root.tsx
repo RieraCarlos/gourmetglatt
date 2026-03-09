@@ -19,7 +19,7 @@ const Root = () => {
                     .select('*')
                     .eq('id', session.user.id)
                     .single();
-                console.log(session.user.id);
+
                 if (error) throw error;
 
                 if (isSubscribed) {
@@ -49,16 +49,16 @@ const Root = () => {
 
         // Initialize session
         const initializeAuth = async () => {
-            console.log("Initializing auth");
+
             try {
-                console.log("Loading desde Root.tsx:");
+
                 const { data: { session }, error } = await supabase.auth.getSession();
                 if (error) {
-                    console.log("Error desde Root.tsx:", error);
+
                     throw error;
                 }
                 if (session) {
-                    console.log("Session desde Root.tsx:", session);
+
                     await fetchProfile(session);
                 } else {
                     if (isSubscribed) {
@@ -85,15 +85,15 @@ const Root = () => {
             if (event === 'SIGNED_IN' && session) {
                 await fetchProfile(session);
             } else if (event === 'SIGNED_OUT') {
-                console.log('User signed out');
+
                 if (isSubscribed) {
                     dispatch(logout());
                 }
             } else if (event === 'TOKEN_REFRESHED' && session) {
-                console.log('User token refreshed');
+
                 await fetchProfile(session);
             } else if (!session) {
-                console.log('No session found');
+
                 if (isSubscribed) {
                     dispatch(setLoading(false));
                 }

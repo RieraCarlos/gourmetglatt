@@ -9,7 +9,7 @@ const Home: React.FC = () => {
     const { user } = useAppSelector((state) => state.auth);
     const navigate = useNavigate();
     const dispatch = useDispatch();
-    console.log(user);
+
     useEffect(() => {
         if (user) {
             if (user.role === 'admin') {

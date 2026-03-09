@@ -6,6 +6,7 @@ import { SiteHeader } from "./componentSupervisor/site-header"
 import ScanInventory from "./componentSupervisor/ScanInventory"
 import ProductCatalog from "@/components/ProductCatalog"
 import InventoryDashboard from "./componentSupervisor/DashboardPage"
+import ReportGenerator from "@/components/ReportGenerator"
 import {
     SidebarInset,
     SidebarProvider,
@@ -45,6 +46,7 @@ export default function Page() {
                             <Route path="scan" element={<ScanInventory />} />
                             <Route path="catalog" element={<ProductCatalog />} />
                             <Route path="dashboard" element={<InventoryDashboard />} />
+                            <Route path="report" element={<ReportGenerator />} />
                         </Routes>
                     </div>
                 </div>

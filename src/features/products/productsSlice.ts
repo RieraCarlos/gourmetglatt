@@ -20,7 +20,7 @@ export const fetchProducts = createAsyncThunk(
     async (_, { rejectWithValue }) => {
         try {
             const { data, error } = await supabase
-                .from('products')
+                .from('v_active_products')
                 .select('*')
                 .order('name', { ascending: true });
 
@@ -41,7 +41,7 @@ export const fetchProductByBarcode = createAsyncThunk(
             const cleanBarcode = barcode.trim()
 
             const { data, error } = await supabase
-                .from('products')
+                .from('v_active_products')
                 .select('*')
                 .eq('barcode', cleanBarcode)
                 .maybeSingle()
@@ -98,6 +98,28 @@ export const updateProduct = createAsyncThunk(
     }
 );
 
+export const softDeleteProduct = createAsyncThunk(
+    'products/softDeleteProduct',
+    async ({ id, user_id }: { id: string, user_id: string }, { rejectWithValue }) => {
+        try {
+            const { error } = await supabase
+                .from('products')
+                .update({
+                    deleted_at: new Date().toISOString(),
+                    deleted_by: user_id
+                })
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return id;
+        } catch (err: any) {
+            return rejectWithValue(err.message);
+        }
+    }
+);
+
 
 const productsSlice = createSlice({
     name: 'products',
@@ -138,6 +160,9 @@ const productsSlice = createSlice({
             .addCase(updateProduct.rejected, (state, action) => {
                 // Deshacer optimismo en la vida real requeriría restaurar el original, aquí solo mostramos error
                 state.error = action.payload as string;
+            })
+            .addCase(softDeleteProduct.fulfilled, (state, action) => {
+                state.items = state.items.filter(p => p.id !== action.payload);
             });
     },
 });

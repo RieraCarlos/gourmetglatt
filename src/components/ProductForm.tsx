@@ -209,7 +209,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, initialBarcode, onCl
                         <button
                             type="submit"
                             disabled={loading}
-                            className="flex-[2] py-4 px-6 rounded-2xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-2"
+                            className="flex-2 py-4 px-6 rounded-2xl bg-primary text-primary-foreground font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-0.5 active:translate-y-0 transition-all flex items-center justify-center gap-2"
                         >
                             {loading ? (
                                 <div className="w-6 h-6 border-2 border-primary-foreground/30 border-t-primary-foreground animate-spin rounded-full" />

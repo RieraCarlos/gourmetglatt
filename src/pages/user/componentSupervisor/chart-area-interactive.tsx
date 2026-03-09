@@ -39,7 +39,7 @@ export function ChartAreaInteractive() {
     const dispatch = useAppDispatch()
     const { items: data, loading, lastFetch } = useAppSelector((s) => s.inventory)
 
-    console.log("Inventory data for chart:", data, "Loading:", loading, "LastFetch:", lastFetch)
+
 
     React.useEffect(() => {
         // Detect when page becomes visible again
@@ -52,7 +52,7 @@ export function ChartAreaInteractive() {
                     (Date.now() - lastFetch > CACHE_DURATION)
 
                 if (shouldFetch && !loading) {
-                    console.log("Page visible again, fetching inventory data...")
+
                     dispatch(fetchInventory())
                 }
             }
@@ -72,7 +72,7 @@ export function ChartAreaInteractive() {
             (Date.now() - lastFetch > CACHE_DURATION)
 
         if (shouldFetch && !loading) {
-            console.log("Fetching inventory data...")
+
             dispatch(fetchInventory())
         }
     }, [dispatch, data.length, lastFetch, loading])
