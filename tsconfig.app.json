@@ -11,7 +11,8 @@
     "module": "ESNext",
     "types": [
       "vite/client",
-      "vite-plugin-pwa/client"
+      "vite-plugin-pwa/client",
+      "node"
     ],
     "skipLibCheck": true,
     /* Bundler mode */
@@ -35,9 +36,7 @@
       ]
     }
   },
-}
-/*
-"include": [
+  "include": [
     "src"
   ]
-*/
+}
