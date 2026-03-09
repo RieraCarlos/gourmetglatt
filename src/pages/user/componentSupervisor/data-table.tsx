@@ -44,19 +44,18 @@ import {
     IconChevronsRight,
     IconGripVertical,
     IconLayoutColumns,
-    IconTrendingUp,
     IconDotsVertical,
     IconEdit,
     IconTrash,
 } from "@tabler/icons-react"
-import { Bar, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis, Line, ComposedChart } from "recharts"
-
 import { useAppDispatch, useAppSelector } from "@/app/hook"
 import { fetchStockMovements, fetchStockMovementsBatch, fetchInventory } from "@/features/inventory/inventorySlice"
 import { useInventoryRealtime } from "@/hooks/useInventoryRealtime"
 import type { InventoryItem } from "@/app/types/database"
 import { inventorySchema } from "@/app/types/schemas"
 import { useIsMobile } from "@/hooks/use-mobile"
+
+const StockMovementChart = React.lazy(() => import("./stock-movement-chart").then(m => ({ default: m.StockMovementChart })))
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -421,116 +420,38 @@ function TableCellViewer({ item }: { item: StockData }) {
             <DrawerContent>
                 <DrawerHeader className="gap-1">
                     <DrawerTitle>{item.name}</DrawerTitle>
-                    <DrawerDescription>
+                    <DrawerDescription className="text-xs ">
                         Accumulated stock and individual movements over time
                     </DrawerDescription>
                 </DrawerHeader>
-                <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
-                    {!isMobile && (
-                        <>
-                            <div className="h-48">
-                                {isLoadingMovements ? (
-                                    <div className="flex items-center justify-center h-full">
-                                        <Skeleton className="h-4 w-32" />
-                                    </div>
-                                ) : movementsErrorForProduct ? (
-                                    <div className="flex items-center justify-center h-full text-destructive">
-                                        Error loading movements: {movementsErrorForProduct}
-                                    </div>
-                                ) : chartData.length > 0 ? (
-                                    <ResponsiveContainer width="100%" height="100%">
-                                        <ComposedChart data={chartData}>
-                                            <defs>
-                                                <linearGradient id="stockGradient" x1="0" y1="0" x2="0" y2="1">
-                                                    <stop offset="5%" stopColor="hsl(220, 70%, 50%)" stopOpacity={0.8} />
-                                                    <stop offset="95%" stopColor="hsl(220, 70%, 50%)" stopOpacity={0.1} />
-                                                </linearGradient>
-                                            </defs>
-                                            <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-                                            <XAxis
-                                                dataKey="date"
-                                                axisLine={false}
-                                                tickLine={false}
-                                                tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-                                                tickFormatter={(value) => new Date(value).toLocaleDateString('es-ES', { month: 'short', day: 'numeric' })}
-                                            />
-                                            <YAxis
-                                                yAxisId="stock"
-                                                orientation="left"
-                                                axisLine={false}
-                                                tickLine={false}
-                                                tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-                                                label={{ value: 'Stock', angle: -90, position: 'insideLeft' }}
-                                            />
-                                            <YAxis
-                                                yAxisId="movements"
-                                                orientation="right"
-                                                axisLine={false}
-                                                tickLine={false}
-                                                tick={{ fontSize: 12, fill: 'hsl(var(--muted-foreground))' }}
-                                                label={{ value: 'Movimientos', angle: 90, position: 'insideRight' }}
-                                            />
-                                            <Tooltip
-                                                contentStyle={{
-                                                    backgroundColor: 'hsl(var(--background))',
-                                                    border: '1px solid hsl(var(--border))',
-                                                    borderRadius: '6px',
-                                                }}
-                                                labelFormatter={(value) => `Fecha: ${new Date(value).toLocaleDateString('es-ES')}`}
-                                                formatter={(value, name) => {
-                                                    if (name === 'stock') return [value, 'Stock Total']
-                                                    if (name === 'entries') return [value, 'Entrada']
-                                                    if (name === 'outputs') return [value, 'Salida']
-                                                    return [value, name]
-                                                }}
-                                            />
-                                            {/* Stock line */}
-                                            <Line
-                                                yAxisId="stock"
-                                                type="monotone"
-                                                dataKey="stock"
-                                                stroke="hsl(220, 70%, 50%)"
-                                                strokeWidth={3}
-                                                dot={{ fill: 'hsl(220, 70%, 50%)', strokeWidth: 2, r: 4 }}
-                                                activeDot={{ r: 6, stroke: 'hsl(220, 70%, 50%)', strokeWidth: 2 }}
-                                            />
-                                            {/* Entries bars */}
-                                            <Bar
-                                                yAxisId="movements"
-                                                dataKey="entries"
-                                                fill="hsl(142, 71%, 45%)"
-                                                radius={[2, 2, 0, 0]}
-                                            />
-                                            {/* Outputs bars */}
-                                            <Bar
-                                                yAxisId="movements"
-                                                dataKey="outputs"
-                                                fill="hsl(0, 0%, 64%)"
-                                                radius={[2, 2, 0, 0]}
-                                            />
-                                        </ComposedChart>
-                                    </ResponsiveContainer>
-                                ) : (
-                                    <div className="flex items-center justify-center h-full text-muted-foreground">
-                                        No movement data available
-                                    </div>
-                                )}
+                <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm pb-8">
+                    <React.Suspense fallback={
+                        <div className="h-48 flex items-center justify-center border rounded-xl border-dashed">
+                            <div className="flex flex-col items-center gap-2">
+                                <Skeleton className="h-4 w-32" />
+                                <span className="text-xs text-muted-foreground">Cargando analíticas...</span>
                             </div>
-                            <Separator />
-                            <div className="grid gap-2">
-                                <div className="flex gap-2 leading-none font-medium">
-                                    Stock Evolution <IconTrendingUp className="size-4" />
-                                </div>
-                                <div className="text-muted-foreground">
-                                    <strong>Blue line:</strong> Accumulated stock over time<br />
-                                    <strong>Green bars:</strong> Individual entries<br />
-                                    <strong>Gray bars:</strong> Individual outputs<br />
-                                    Current stock: <strong>{item.stock}</strong> units
-                                </div>
+                        </div>
+                    }>
+                        {isLoadingMovements ? (
+                            <div className="h-48 flex items-center justify-center border rounded-xl border-dashed">
+                                <Skeleton className="h-4 w-32" />
                             </div>
-                            <Separator />
-                        </>
-                    )}
+                        ) : movementsErrorForProduct ? (
+                            <div className="h-48 flex items-center justify-center text-destructive text-xs p-4 text-center border rounded-xl border-destructive/20 bg-destructive/5">
+                                Error al cargar movimientos: {movementsErrorForProduct}
+                            </div>
+                        ) : (
+                            <StockMovementChart
+                                data={chartData}
+                                productName={item.name}
+                                currentStock={item.stock}
+                            />
+                        )}
+                    </React.Suspense>
+
+                    <Separator className="opacity-50" />
+
                     <div className="grid gap-4">
                         <div className="grid grid-cols-2 gap-4">
                             <div className="flex flex-col gap-3">
