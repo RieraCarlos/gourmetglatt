@@ -29,16 +29,30 @@ import {
     useSidebar,
 } from "@/components/ui/sidebar"
 
+import { supabase } from "@/lib/supabase"
+import { useAppDispatch } from "@/app/hook"
+import { logout } from "@/features/auth/authSlice"
+import type { UserProfile } from "@/features/auth/authSlice"
+import { useNavigate } from "react-router-dom"
+
 export function NavUser({
     user,
 }: {
-    user: {
-        name: string
-        email: string
-        avatar: string
-    }
+    user: UserProfile
 }) {
     const { isMobile } = useSidebar()
+    const dispatch = useAppDispatch()
+    const navigate = useNavigate()
+
+    const handleLogout = () => {
+        dispatch(logout())
+        navigate('/login', { replace: true })
+        supabase.auth.signOut().catch((error) => {
+            console.error('Error signing out:', error)
+        })
+    }
+
+    const avatarUrl = user.avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${user.email}`
 
     return (
         <SidebarMenu>
@@ -49,9 +63,9 @@ export function NavUser({
                             size="lg"
                             className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
                         >
-                            <Avatar className="h-8 w-8 rounded-lg grayscale">
-                                <AvatarImage src={user.avatar} alt={user.name} />
-                                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                            <Avatar className="h-8 w-8 rounded-lg">
+                                <AvatarImage src={avatarUrl} alt={user.name} />
+                                <AvatarFallback className="rounded-lg">{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                             </Avatar>
                             <div className="grid flex-1 text-left text-sm leading-tight">
                                 <span className="truncate font-medium">{user.name}</span>
@@ -71,8 +85,8 @@ export function NavUser({
                         <DropdownMenuLabel className="p-0 font-normal">
                             <div className="flex items-center gap-2 px-1 py-1.5 text-left text-sm">
                                 <Avatar className="h-8 w-8 rounded-lg">
-                                    <AvatarImage src={user.avatar} alt={user.name} />
-                                    <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                                    <AvatarImage src={avatarUrl} alt={user.name} />
+                                    <AvatarFallback className="rounded-lg">{user.name.substring(0, 2).toUpperCase()}</AvatarFallback>
                                 </Avatar>
                                 <div className="grid flex-1 text-left text-sm leading-tight">
                                     <span className="truncate font-medium">{user.name}</span>
@@ -98,7 +112,7 @@ export function NavUser({
                             </DropdownMenuItem>
                         </DropdownMenuGroup>
                         <DropdownMenuSeparator />
-                        <DropdownMenuItem>
+                        <DropdownMenuItem onClick={handleLogout}>
                             <IconLogout />
                             Log out
                         </DropdownMenuItem>

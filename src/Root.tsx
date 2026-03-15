@@ -1,3 +1,4 @@
+{/*}
 import { useEffect } from 'react'
 import { supabase } from './lib/supabase'
 import { setAuth, setLoading, logout } from '@/features/auth/authSlice'
@@ -119,3 +120,4 @@ const Root = () => {
 };
 
 export default Root;
+*/}

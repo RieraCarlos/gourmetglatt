@@ -35,7 +35,7 @@ export default function CustomerFilter({
                 <SelectContent>
 
                     <SelectItem value="all">
-                        Todos los clientes
+                        All
                     </SelectItem>
 
                     {customers.map((customer, index) => (

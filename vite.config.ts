@@ -9,21 +9,25 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
-      injectRegister: 'script',
-      devOptions: {
-        enabled: true
-      },
-      workbox: {
-        maximumFileSizeToCacheInBytes: 5000000, // 5MB
+      strategies: 'injectManifest',
+      srcDir: 'src/sw',
+      filename: 'sw.ts',
+      registerType: 'prompt',
+      injectRegister: false,
+      pwaAssets: {
+        disabled: true,
+        config: true,
       },
       manifest: {
-        name: 'Gourmet Glatt Inventory',
+        name: 'Gourmet Glatt Inventory - Production',
         short_name: 'GourmetGlatt',
         description: 'Inventory Management App for Gourmet Glatt',
-        theme_color: '#ffffff',
-        background_color: '#ffffff',
+        theme_color: '#202312',
+        background_color: '#202312',
         display: 'standalone',
+        orientation: 'portrait',
+        scope: '/',
+        start_url: '/',
         icons: [
           {
             src: 'images/logo.png',
@@ -34,9 +38,46 @@ export default defineConfig({
             src: 'images/logo.png',
             sizes: '512x512',
             type: 'image/png'
+          },
+          {
+            src: 'images/logo.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'any maskable'
+          }
+        ],
+        shortcuts: [
+          {
+            name: 'Escaneo de Inventario',
+            short_name: 'Escaneo',
+            description: 'Acceso directo a la cámara de escaneo',
+            url: '/supervisor/scan',
+            icons: [{ src: 'images/logo.png', sizes: '192x192' }]
+          },
+          {
+            name: 'Catálogo de Productos',
+            short_name: 'Catálogo',
+            description: 'Ver inventario completo',
+            url: '/supervisor/catalog',
+            icons: [{ src: 'images/logo.png', sizes: '192x192' }]
+          },
+          {
+            name: 'Generador de Reportes',
+            short_name: 'Reportes',
+            description: 'Exportar analíticas y PDFs',
+            url: '/supervisor/report',
+            icons: [{ src: 'images/logo.png', sizes: '192x192' }]
           }
         ]
-      }
+      },
+      injectManifest: {
+        maximumFileSizeToCacheInBytes: 3000000,
+      },
+      devOptions: {
+        enabled: true,
+        type: 'module',
+        navigateFallback: 'index.html',
+      },
     })
   ],
   resolve: {

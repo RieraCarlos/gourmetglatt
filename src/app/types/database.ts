@@ -2,6 +2,9 @@ export interface Profile {
     id: string;
     email: string;
     role: 'admin' | 'supervisor';
+    name: string;
+    avatar_url: string | null;
+    sector_id: string | null;
     created_at: string;
 }
 
@@ -10,6 +13,7 @@ export interface Product {
     barcode: string;
     name: string;
     description: string | null;
+    category: string;
     created_at: string;
     deleted_at?: string | null;
     deleted_by?: string | null;
@@ -30,6 +34,7 @@ export interface InventoryItem {
     entry: number;
     output: number;
     stock: number;
+    category: string;
 }
 
 export interface StockMovement {

@@ -114,13 +114,13 @@ export function ChartAreaInteractive() {
     return (
         <Card className="w-full min-w-0 overflow-hidden @container/card">
             <CardHeader>
-                <CardTitle>Product tracking</CardTitle>
+                <CardTitle className="font-bold text-[#202312]">Product tracking</CardTitle>
                 <CardDescription>
-                    <span className="hidden @[540px]/card:block">
+                    <span className="hidden @[540px]/card:block text-[#3b4125]/80">
                         Product entries and outputs comparison
 
                     </span>
-                    <span className="@[540px]/card:hidden">
+                    <span className="@[540px]/card:hidden text-[#3b4125]/80">
                         Entries vs Outputs
                         {loading && " (Refreshing...)"}
                     </span>
@@ -136,24 +136,24 @@ export function ChartAreaInteractive() {
                             <linearGradient id="fillEntry" x1="0" y1="0" x2="0" y2="1">
                                 <stop
                                     offset="5%"
-                                    stopColor="hsl(142, 71%, 45%)"
+                                    stopColor="hsl(70.213, 25%, 37%)"
                                     stopOpacity={1.0}
                                 />
                                 <stop
                                     offset="95%"
-                                    stopColor="hsl(142, 71%, 45%)"
+                                    stopColor="hsl(70.213, 25%, 37%)"
                                     stopOpacity={0.1}
                                 />
                             </linearGradient>
                             <linearGradient id="fillOutput" x1="0" y1="0" x2="0" y2="1">
                                 <stop
                                     offset="5%"
-                                    stopColor="hsl(0, 0%, 64%)"
+                                    stopColor="hsl(72.857, 28%, 20%)"
                                     stopOpacity={0.8}
                                 />
                                 <stop
                                     offset="95%"
-                                    stopColor="hsl(0, 0%, 64%)"
+                                    stopColor="hsl(72.857, 28%, 20%)"
                                     stopOpacity={0.1}
                                 />
                             </linearGradient>
@@ -177,14 +177,14 @@ export function ChartAreaInteractive() {
                             dataKey="output"
                             type="natural"
                             fill="url(#fillOutput)"
-                            stroke="hsl(0, 0%, 64%)"
+                            stroke="hsl(72.857, 28%, 20%)"
                             stackId="a"
                         />
                         <Area
                             dataKey="entry"
                             type="natural"
                             fill="url(#fillEntry)"
-                            stroke="hsl(142, 71%, 45%)"
+                            stroke="hsl(70.213, 25%, 37%)"
                             stackId="a"
                         />
                     </AreaChart>

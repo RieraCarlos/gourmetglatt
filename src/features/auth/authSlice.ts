@@ -1,5 +1,5 @@
-import type { PayloadAction } from '@reduxjs/toolkit';
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, createAsyncThunk, type PayloadAction } from '@reduxjs/toolkit';
+import { supabase } from '@/lib/supabase';
 
 export type UserRole = 'admin' | 'supervisor';
 
@@ -7,9 +7,47 @@ export interface UserProfile {
     id: string;
     email: string;
     role: UserRole;
-    name?: string;
-    avatar_url?: string;
+    name: string;
+    avatar_url: string | null;
+    sector_id: string | null;
 }
+
+export const updateUserProfile = createAsyncThunk(
+    'auth/updateProfile',
+    async ({ id, name, avatar_url }: { id: string; name: string; avatar_url: string | null }, { rejectWithValue }) => {
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .update({ name, avatar_url })
+                .eq('id', id)
+                .select()
+                .single();
+
+            if (error) throw error;
+            return data as UserProfile;
+        } catch (error: any) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
+
+export const fetchCurrentUserProfile = createAsyncThunk(
+    'auth/fetchProfile',
+    async (id: string, { rejectWithValue }) => {
+        try {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('*')
+                .eq('id', id)
+                .single();
+
+            if (error) throw error;
+            return data as UserProfile;
+        } catch (error: any) {
+            return rejectWithValue(error.message);
+        }
+    }
+);
 
 interface AuthState {
     user: UserProfile | null;
@@ -72,6 +110,37 @@ const authSlice = createSlice({
             // Limpiar localStorage
             localStorage.removeItem('gourmet_auth');
         },
+    },
+    extraReducers: (builder) => {
+        builder
+            .addCase(updateUserProfile.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(updateUserProfile.fulfilled, (state, action: PayloadAction<UserProfile>) => {
+                state.loading = false;
+                state.user = action.payload;
+                // Update localStorage with the new profile data
+                localStorage.setItem('gourmet_auth', JSON.stringify(state));
+            })
+            .addCase(updateUserProfile.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
+            .addCase(fetchCurrentUserProfile.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(fetchCurrentUserProfile.fulfilled, (state, action: PayloadAction<UserProfile>) => {
+                state.loading = false;
+                state.user = action.payload;
+                // Update localStorage with the new profile data
+                localStorage.setItem('gourmet_auth', JSON.stringify(state));
+            })
+            .addCase(fetchCurrentUserProfile.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            });
     },
 });
 

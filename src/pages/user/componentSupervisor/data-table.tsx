@@ -43,7 +43,6 @@ import {
     IconChevronsLeft,
     IconChevronsRight,
     IconGripVertical,
-    IconLayoutColumns,
     IconDotsVertical,
     IconEdit,
     IconTrash,
@@ -70,7 +69,6 @@ import {
 } from "@/components/ui/drawer"
 import {
     DropdownMenu,
-    DropdownMenuCheckboxItem,
     DropdownMenuContent,
     DropdownMenuItem,
     DropdownMenuLabel,
@@ -105,6 +103,11 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
+import {
+    Tabs,
+    TabsList,
+    TabsTrigger,
+} from "@/components/ui/tabs"
 
 // reuse inventory item type, alias for clarity
 type StockData = InventoryItem
@@ -280,20 +283,24 @@ const columns: ColumnDef<StockData>[] = [
     },
     {
         accessorKey: "name",
-        header: "NOMBRE",
+        header: "NAME / BARCODE",
         cell: ({ row }) => {
-            return <TableCellViewer item={row.original} />
+            return (
+                <div className="flex flex-col gap-0.5 min-w-[140px]">
+                    <TableCellViewer item={row.original} />
+                </div>
+            )
         },
     },
     {
         accessorKey: "entry",
         header: "ENTRY",
-        cell: ({ row }) => <div className="text-center">{row.getValue("entry")}</div>,
+        cell: ({ row }) => <div className="text-right font-medium pr-4">{row.getValue("entry")}</div>,
     },
     {
         accessorKey: "output",
         header: "OUTPUT",
-        cell: ({ row }) => <div className="text-center">{row.getValue("output")}</div>,
+        cell: ({ row }) => <div className="text-right font-medium pr-4">{row.getValue("output")}</div>,
     },
     {
         accessorKey: "stock",
@@ -301,9 +308,14 @@ const columns: ColumnDef<StockData>[] = [
         cell: ({ row }) => {
             const stock = row.getValue("stock") as number
             return (
-                <Badge variant={stock > 0 ? "default" : "destructive"} className="text-center">
-                    {stock}
-                </Badge>
+                <div className="flex justify-center">
+                    <Badge
+                        variant={stock > 0 ? "default" : "destructive"}
+                        className={`text-center font-bold px-3 py-0.5 rounded-full ${stock > 0 ? "bg-[#3b4125] hover:bg-[#3b4125]" : ""}`}
+                    >
+                        {stock}
+                    </Badge>
+                </div>
             )
         },
     },
@@ -323,14 +335,14 @@ function DraggableRow({ row }: { row: Row<StockData> }) {
             data-state={row.getIsSelected() && "selected"}
             data-dragging={isDragging}
             ref={setNodeRef}
-            className="relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80"
+            className="relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80 border-b border-[#525834]/20 transition-colors hover:bg-[#6E7647]/5"
             style={{
                 transform: CSS.Transform.toString(transform),
                 transition: transition,
             }}
         >
             {row.getVisibleCells().map((cell) => (
-                <TableCell key={cell.id}>
+                <TableCell key={cell.id} className="py-4 px-4">
                     {flexRender(
                         cell.column.columnDef.cell,
                         cell.getContext()
@@ -496,6 +508,19 @@ export function DataTable() {
         pageIndex: 0,
         pageSize: 10,
     })
+    const [activeCategory, setActiveCategory] = React.useState("All")
+
+    // Dynamic category extraction
+    const categories = React.useMemo(() => {
+        const uniqueCategories = Array.from(new Set(data.map(item => item.category).filter(Boolean)))
+        return ["All", ...uniqueCategories.sort()]
+    }, [data])
+
+    // Memoized filtered data
+    const filteredData = React.useMemo(() => {
+        if (activeCategory === "All") return localData
+        return localData.filter(item => item.category === activeCategory)
+    }, [localData, activeCategory])
 
     // Setup realtime subscription for automatic updates
     useInventoryRealtime()
@@ -546,7 +571,7 @@ export function DataTable() {
 
     // Create table instance
     const table = useReactTable({
-        data: localData,
+        data: filteredData,
         columns,
         state: {
             sorting,
@@ -566,6 +591,11 @@ export function DataTable() {
         getFacetedRowModel: getFacetedRowModel(),
         getFacetedUniqueValues: getFacetedUniqueValues(),
     })
+
+    // Reset pagination on category change
+    React.useEffect(() => {
+        table.setPageIndex(0)
+    }, [activeCategory, table])
 
     // Preload movements for current page products
     React.useEffect(() => {
@@ -608,73 +638,49 @@ export function DataTable() {
     }
 
     return (
-        <div className="w-full flex-col justify-start gap-6">
+        <div className="w-full flex flex-col gap-6 pt-2">
             <div className="flex items-center justify-between px-4 lg:px-6">
-                <Label htmlFor="view-selector" className="sr-only">
-                    View
-                </Label>
-                <h2 className="text-lg font-semibold mr-4">Inventory</h2>
-                <Select defaultValue="inventory">
-                    <SelectTrigger
-                        className="flex w-fit @4xl/main:hidden"
-                        size="sm"
-                        id="view-selector"
-                    >
-                        <SelectValue placeholder="Select a view" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="inventory">Inventory</SelectItem>
-                    </SelectContent>
-                </Select>
-                <div className="flex items-center gap-2">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                            <Button variant="outline" size="sm">
-                                <IconLayoutColumns className="size-4" />
-                                <span className="hidden lg:inline">Columns</span>
-                                <IconChevronDown className="size-4" />
-                            </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="w-56">
-                            {table
-                                .getAllColumns()
-                                .filter(
-                                    (column) =>
-                                        typeof column.accessorFn !== "undefined" &&
-                                        column.getCanHide()
-                                )
-                                .map((column) => {
-                                    return (
-                                        <DropdownMenuCheckboxItem
-                                            key={column.id}
-                                            className="capitalize"
-                                            checked={column.getIsVisible()}
-                                            onCheckedChange={(value) =>
-                                                column.toggleVisibility(!!value)
-                                            }
-                                        >
-                                            {column.id}
-                                        </DropdownMenuCheckboxItem>
-                                    )
-                                })}
-                        </DropdownMenuContent>
-                    </DropdownMenu>
+                <div>
+                    <h2 className="text-xl font-black text-[#202312] uppercase tracking-tight">Inventory</h2>
+                    <p className="text-[10px] font-bold text-[#6E7647] uppercase tracking-widest mt-0.5">Real-time Management</p>
                 </div>
             </div>
 
-            <div className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6">
-                <div className="flex items-center gap-2 py-4">
-                    <Input
-                        placeholder="Filter by product name..."
-                        value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
-                        onChange={(event) =>
-                            table.getColumn("name")?.setFilterValue(event.target.value)
-                        }
-                        className="max-w-sm"
-                    />
+            <div className="px-4 lg:px-6">
+                <Tabs
+                    value={activeCategory}
+                    onValueChange={setActiveCategory}
+                    className="w-full"
+                >
+                    <TabsList className="w-full justify-start overflow-x-auto overflow-y-hidden h-11 bg-[#202312]/5 p-1 gap-1 no-scrollbar rounded-xl border border-[#202312]/5">
+                        {categories.map((category) => (
+                            <TabsTrigger
+                                key={category}
+                                value={category}
+                                className="data-[state=active]:bg-[#3b4125] data-[state=active]:text-white rounded-lg px-6 h-9 text-[10px] font-black uppercase tracking-wider transition-all"
+                            >
+                                {category === "Todos" ? "All categories" : category}
+                            </TabsTrigger>
+                        ))}
+                    </TabsList>
+                </Tabs>
+            </div>
+
+            <div className="relative flex flex-col gap-4 px-4 lg:px-6">
+                <div className="flex items-center gap-2">
+                    <div className="relative w-full max-w-sm">
+                        <Input
+                            placeholder="Filter by product name..."
+                            value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
+                            onChange={(event) =>
+                                table.getColumn("name")?.setFilterValue(event.target.value)
+                            }
+                            className="pl-4 h-11 rounded-xl border-[#202312]/10 bg-white shadow-sm focus-visible:ring-[#3b4125]"
+                        />
+                    </div>
                 </div>
 
-                <div className="overflow-hidden rounded-lg border">
+                <div className="relative rounded-2xl border border-[#202312]/10 bg-white shadow-md overflow-hidden">
                     <DndContext
                         collisionDetection={closestCenter}
                         modifiers={[restrictToVerticalAxis]}
@@ -682,139 +688,136 @@ export function DataTable() {
                         sensors={sensors}
                         id={sortableId}
                     >
-                        <Table>
-                            <TableHeader className="sticky top-0 z-10 bg-muted">
-                                {table.getHeaderGroups().map((headerGroup) => (
-                                    <TableRow key={headerGroup.id}>
-                                        {headerGroup.headers.map((header) => {
-                                            return (
-                                                <TableHead
-                                                    key={header.id}
-                                                    colSpan={header.colSpan}
-                                                    className={header.column.getCanSort() ? "cursor-pointer select-none" : undefined}
-                                                    onClick={
-                                                        header.column.getCanSort()
-                                                            ? header.column.getToggleSortingHandler()
-                                                            : undefined
-                                                    }
-                                                >
-                                                    {header.isPlaceholder ? null : (
-                                                        <div className="flex items-center gap-1">
-                                                            {flexRender(
-                                                                header.column.columnDef.header,
-                                                                header.getContext()
-                                                            )}
-                                                            {header.column.getIsSorted()
-                                                                ? header.column.getIsSorted() === "asc"
-                                                                    ? <IconChevronUp className="size-3" />
-                                                                    : <IconChevronDown className="size-3" />
-                                                                : null}
-                                                        </div>
-                                                    )}
-                                                </TableHead>
-                                            )
-                                        })}
-                                    </TableRow>
-                                ))}
-                            </TableHeader>
-                            <TableBody className="**:data-[slot=table-cell]:first:w-8">
-                                {table.getRowModel().rows?.length ? (
-                                    <SortableContext
-                                        items={dataIds}
-                                        strategy={verticalListSortingStrategy}
-                                    >
-                                        {table.getRowModel().rows.map((row) => (
-                                            <DraggableRow key={row.id} row={row} />
-                                        ))}
-                                    </SortableContext>
-                                ) : (
-                                    <TableRow>
-                                        <TableCell
-                                            colSpan={columns.length}
-                                            className="h-24 text-center"
+                        <div className="overflow-x-auto overflow-y-hidden scrollbar-hide">
+                            <Table>
+                                <TableHeader className="sticky top-0 z-20 bg-[#202312]">
+                                    {table.getHeaderGroups().map((headerGroup) => (
+                                        <TableRow key={headerGroup.id} className="hover:bg-transparent border-none h-14">
+                                            {headerGroup.headers.map((header) => {
+                                                const isNumeric = header.column.id === "entry" || header.column.id === "output" || header.column.id === "stock"
+                                                return (
+                                                    <TableHead
+                                                        key={header.id}
+                                                        colSpan={header.colSpan}
+                                                        className={`text-[10px] font-black uppercase text-white tracking-widest px-4 ${header.column.getCanSort() ? "cursor-pointer select-none" : ""}`}
+                                                        onClick={
+                                                            header.column.getCanSort()
+                                                                ? header.column.getToggleSortingHandler()
+                                                                : undefined
+                                                        }
+                                                    >
+                                                        {header.isPlaceholder ? null : (
+                                                            <div className={`flex items-center gap-2 ${isNumeric ? "justify-center" : "justify-start"}`}>
+                                                                {flexRender(
+                                                                    header.column.columnDef.header,
+                                                                    header.getContext()
+                                                                )}
+                                                                {header.column.getIsSorted()
+                                                                    ? header.column.getIsSorted() === "asc"
+                                                                        ? <IconChevronUp className="size-3 text-white/50" />
+                                                                        : <IconChevronDown className="size-3 text-white/50" />
+                                                                    : null}
+                                                            </div>
+                                                        )}
+                                                    </TableHead>
+                                                )
+                                            })}
+                                        </TableRow>
+                                    ))}
+                                </TableHeader>
+                                <TableBody>
+                                    {table.getRowModel().rows?.length ? (
+                                        <SortableContext
+                                            items={dataIds}
+                                            strategy={verticalListSortingStrategy}
                                         >
-                                            No inventory data available.
-                                        </TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                                            {table.getRowModel().rows.map((row) => (
+                                                <DraggableRow key={row.id} row={row} />
+                                            ))}
+                                        </SortableContext>
+                                    ) : (
+                                        <TableRow>
+                                            <TableCell
+                                                colSpan={columns.length}
+                                                className="h-32 text-center text-[#6E7647] font-medium italic"
+                                            >
+                                                No inventory matches available.
+                                            </TableCell>
+                                        </TableRow>
+                                    )}
+                                </TableBody>
+                            </Table>
+                        </div>
                     </DndContext>
                 </div>
 
-                <div className="flex items-center justify-between px-4">
-                    <div className="hidden flex-1 text-sm text-muted-foreground lg:flex">
-                        {table.getFilteredSelectedRowModel().rows.length} of{" "}
-                        {table.getFilteredRowModel().rows.length} row(s) selected.
-                    </div>
-                    <div className="flex w-full items-center gap-8 lg:w-fit">
-                        <div className="hidden items-center gap-2 lg:flex">
-                            <Label htmlFor="rows-per-page" className="text-sm font-medium">
-                                Rows per page
-                            </Label>
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-6 px-2">
+                    <div className="flex items-center gap-6">
+                        <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-black text-[#6E7647] uppercase tracking-wider">Entries:</span>
                             <Select
                                 value={`${table.getState().pagination.pageSize}`}
                                 onValueChange={(value) => {
                                     table.setPageSize(Number(value))
                                 }}
                             >
-                                <SelectTrigger size="sm" className="w-20" id="rows-per-page">
-                                    <SelectValue
-                                        placeholder={table.getState().pagination.pageSize}
-                                    />
+                                <SelectTrigger className="h-9 w-[80px] rounded-xl border-[#202312]/10 bg-white font-bold text-xs shadow-sm focus:ring-[#3b4125]" id="rows-per-page">
+                                    <SelectValue />
                                 </SelectTrigger>
-                                <SelectContent side="top">
+                                <SelectContent side="top" className="rounded-xl">
                                     {[10, 20, 30, 40, 50].map((pageSize) => (
-                                        <SelectItem key={pageSize} value={`${pageSize}`}>
+                                        <SelectItem key={pageSize} value={`${pageSize}`} className="font-bold">
                                             {pageSize}
                                         </SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="flex w-fit items-center justify-center text-sm font-medium">
-                            Page {table.getState().pagination.pageIndex + 1} of{" "}
-                            {table.getPageCount()}
+                        <div className="text-[10px] font-black text-[#6E7647] uppercase tracking-widest">
+                            {table.getFilteredRowModel().rows.length} Total SKUs
                         </div>
-                        <div className="ml-auto flex items-center gap-2 lg:ml-0">
+                    </div>
+
+                    <div className="flex items-center gap-3">
+                        <span className="text-[10px] font-black text-[#6E7647] uppercase tracking-widest mr-2">
+                            Page {table.getState().pagination.pageIndex + 1} / {table.getPageCount()}
+                        </span>
+                        <div className="flex gap-1.5">
                             <Button
                                 variant="outline"
-                                className="hidden h-8 w-8 p-0 lg:flex"
+                                className="size-9 rounded-xl border-[#202312]/10 bg-white hover:bg-[#202312]/5"
+                                size="icon"
                                 onClick={() => table.setPageIndex(0)}
                                 disabled={!table.getCanPreviousPage()}
                             >
-                                <span className="sr-only">Go to first page</span>
-                                <IconChevronsLeft className="size-4" />
+                                <IconChevronsLeft className="size-4 text-[#3b4125]" />
                             </Button>
                             <Button
                                 variant="outline"
-                                className="size-8"
+                                className="size-9 rounded-xl border-[#202312]/10 bg-white hover:bg-[#202312]/5"
                                 size="icon"
                                 onClick={() => table.previousPage()}
                                 disabled={!table.getCanPreviousPage()}
                             >
-                                <span className="sr-only">Go to previous page</span>
-                                <IconChevronLeft className="size-4" />
+                                <IconChevronLeft className="size-4 text-[#3b4125]" />
                             </Button>
                             <Button
                                 variant="outline"
-                                className="size-8"
+                                className="size-9 rounded-xl border-[#202312]/10 bg-white hover:bg-[#202312]/5"
                                 size="icon"
                                 onClick={() => table.nextPage()}
                                 disabled={!table.getCanNextPage()}
                             >
-                                <span className="sr-only">Go to next page</span>
-                                <IconChevronRight className="size-4" />
+                                <IconChevronRight className="size-4 text-[#3b4125]" />
                             </Button>
                             <Button
                                 variant="outline"
-                                className="hidden size-8 lg:flex"
+                                className="size-9 rounded-xl border-[#202312]/10 bg-white hover:bg-[#202312]/5"
                                 size="icon"
                                 onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                                 disabled={!table.getCanNextPage()}
                             >
-                                <span className="sr-only">Go to last page</span>
-                                <IconChevronsRight className="size-4" />
+                                <IconChevronsRight className="size-4 text-[#3b4125]" />
                             </Button>
                         </div>
                     </div>

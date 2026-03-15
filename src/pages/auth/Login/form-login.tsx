@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input"
 import { useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom"
 import { useAppDispatch } from "@/app/hook"
-import { setAuth, setError, setLoading } from "@/features/auth/authSlice"
+import { setAuth, setError, setLoading, fetchCurrentUserProfile } from "@/features/auth/authSlice"
 import { supabase } from "@/lib/supabase"
 import { LogIn, Eye, EyeOff, Loader2 } from "lucide-react"
 import { useForm } from "react-hook-form"
@@ -62,27 +62,21 @@ export function LoginForm({
 
             if (error) throw error;
 
-            if (data.user) {
-                const { data: profile, error: profileError } = await supabase
-                    .from('profiles')
-                    .select('*')
-                    .eq('id', data.user.id)
-                    .single();
-
-                if (profileError) throw profileError;
-
+            if (data.user && data.session) {
+                // Primero establecemos la sesión básica
                 dispatch(setAuth({
-                    user: {
-                        id: data.user.id,
-                        email: data.user.email!,
-                        role: profile.role,
-                        name: profile.name,
-                        avatar_url: profile.avatar_url,
-                    },
-                    session: data.session,
+                    user: null, // Se llenará en el siguiente paso
+                    session: data.session
                 }));
 
-                navigate(from, { replace: true });
+                // Cargamos el perfil completo (incluyendo sector_id)
+                const resultAction = await dispatch(fetchCurrentUserProfile(data.user.id));
+                
+                if (fetchCurrentUserProfile.fulfilled.match(resultAction)) {
+                    navigate(from, { replace: true });
+                } else {
+                    throw new Error("No se pudo cargar el perfil del usuario");
+                }
             }
         } catch (err: any) {
             dispatch(setError(err.message));
@@ -101,9 +95,9 @@ export function LoginForm({
                     <form className="p-6 md:p-8" onSubmit={handleSubmit(onSubmit)}>
                         <FieldGroup className="gap-6">
                             <div className="flex flex-col items-center gap-2 text-center mb-4">
-                                <h1 className="text-3xl font-bold text-[#747d42] tracking-tight">Welcome</h1>
+                                <h1 className="text-3xl font-bold text-[#3b4125] tracking-tight">Welcome</h1>
                                 <p className="text-muted-foreground text-balance text-sm group-has-data-[slot=input]:text-base">
-                                    Enter to your account of <b className="text-foreground">Gourmet Glatt</b>
+                                    Enter to your account of <b className="text-[#6E7647]">store-inventory</b>
                                 </p>
                             </div>
 
@@ -115,9 +109,9 @@ export function LoginForm({
                                     type="email"
                                     inputMode="email"
                                     autoComplete="email"
-                                    placeholder="admin@gourmetglatt.com"
+                                    placeholder="admin@store-inventory.com"
                                     className={cn(
-                                        "h-11 text-base md:text-sm transition-all focus-visible:ring-[#747d42]",
+                                        "h-11 text-base md:text-sm transition-all focus-visible:none",
                                         errors.email && "border-destructive focus-visible:ring-destructive"
                                     )}
                                 />
@@ -137,17 +131,17 @@ export function LoginForm({
                                         autoComplete="current-password"
                                         placeholder="••••••••"
                                         className={cn(
-                                            "h-11 text-base md:text-sm pr-12 transition-all focus-visible:ring-[#747d42]",
+                                            "h-11 text-base md:text-sm pr-12 transition-all focus-visible:none",
                                             errors.password && "border-destructive focus-visible:ring-destructive"
                                         )}
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
-                                        className="absolute right-0 top-0 h-11 w-11 flex items-center justify-center text-muted-foreground hover:text-[#747d42] transition-colors"
+                                        className="absolute right-0 top-0 h-11 w-11 flex items-center justify-center "
                                         aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
                                     >
-                                        {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                                        {showPassword ? <Eye className="w-5 absolute" /> : <EyeOff className="w-5 absolute" />}
                                     </button>
                                 </div>
                                 <FieldError errors={[{ message: errors.password?.message }]} />
@@ -156,13 +150,13 @@ export function LoginForm({
                             <Button
                                 type="submit"
                                 disabled={localLoading}
-                                className="h-12 w-full bg-[#747d42] hover:bg-[#5f6636] text-white font-bold text-base shadow-lg shadow-[#747d42]/20 rounded-xl transition-all active:scale-[0.98]"
+                                className="h-12 w-full bg-[#3b4125] hover:bg-[#202312] text-white font-bold text-base shadow-lg shadow-[#747d42]/20 rounded-xl transition-all active:scale-[0.98]"
                             >
                                 {localLoading ? (
                                     <Loader2 className="w-5 h-5 animate-spin" />
                                 ) : (
                                     <>
-                                        Log in
+                                        <p>Log in</p>
                                         <LogIn className="ml-2 w-5 h-5" />
                                     </>
                                 )}

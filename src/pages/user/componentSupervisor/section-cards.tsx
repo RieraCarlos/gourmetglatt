@@ -40,118 +40,50 @@ export function SectionCards() {
     }, [dispatch, shouldFetchTodayTotals])
 
     return (
-        <div className="grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4 dark:*:data-[slot=card]:bg-card">
+        <div className="grid grid-cols-1 gap-4 px-4 *:data-[slot=card]:bg-linear-to-r *:data-[slot=card]:from-white *:data-[slot=card]:to-[#3b4125]/20 *:data-[slot=card]:shadow-xs lg:px-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4 dark:*:data-[slot=card]:bg-card">
             <Card className="@container/card">
                 <CardHeader>
-                    <CardDescription className="flex items-center gap-2">
-                        <IconTruck className="size-4" />
+                    <CardDescription className="flex items-center gap-2 text-xs md:text-sm font-bold text-[#202312]">
+                        <IconTruck className="size-7" />
                         Packages shipped today
                     </CardDescription>
-                    <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+                    <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl text-[#3b4125]/80">
                         {shippedToday}
                     </CardTitle>
-                    {/* 
-                    <CardAction>
-                        <Badge variant="outline">
-                            <IconTrendingUp />
-                            +12.5%
-                        </Badge>
-                    </CardAction>
-                    */}
                 </CardHeader>
-                {/* 
-                <CardFooter className="flex-col items-start gap-1.5 text-sm">
-                    <div className="line-clamp-1 flex gap-2 font-medium">
-                        Trending up this month <IconTrendingUp className="size-4" />
-                    </div>
-                    <div className="text-muted-foreground">
-                        Visitors for the last 6 months
-                    </div>
-                </CardFooter>
-                */}
             </Card>
             <Card className="@container/card">
                 <CardHeader>
-                    <CardDescription className="flex items-center gap-2">
-                        <IconPlus className="size-4" />
+                    <CardDescription className="flex items-center gap-2 text-xs md:text-sm font-bold text-[#202312]">
+                        <IconPlus className="size-7" />
                         Packages registered today
                     </CardDescription>
-                    <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+                    <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl text-[#3b4125]/80">
                         {registeredToday}
                     </CardTitle>
-                    {/* 
-                    <CardAction>
-                        <Badge variant="outline">
-                            <IconTrendingDown />
-                            -20%
-                        </Badge>
-                    </CardAction>
-                    */}
                 </CardHeader>
-                {/* 
-                <CardFooter className="flex-col items-start gap-1.5 text-sm">
-                    <div className="line-clamp-1 flex gap-2 font-medium">
-                        Down 20% this period <IconTrendingDown className="size-4" />
-                    </div>
-                    <div className="text-muted-foreground">
-                        Acquisition needs attention
-                    </div>
-                </CardFooter>
-                */}
             </Card>
             <Card className="@container/card">
                 <CardHeader>
-                    <CardDescription className="flex items-center gap-2">
-                        <IconBox className="size-4" />
+                    <CardDescription className="flex items-center gap-2 text-xs md:text-sm font-bold text-[#202312]">
+                        <IconBox className="size-7" />
                         Average stock per product
                     </CardDescription>
-                    <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+                    <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl text-[#3b4125]/80">
                         {averageStock}
                     </CardTitle>
-                    {/* 
-                    <CardAction>
-                        <Badge variant="outline">
-                            <IconTrendingUp />
-                            +12.5%
-                        </Badge>
-                    </CardAction>
-                    */}
                 </CardHeader>
-                {/*     
-                <CardFooter className="flex-col items-start gap-1.5 text-sm">
-                    <div className="line-clamp-1 flex gap-2 font-medium">
-                        Strong user retention <IconTrendingUp className="size-4" />
-                    </div>
-                    <div className="text-muted-foreground">Engagement exceed targets</div>
-                </CardFooter>
-                */}
             </Card>
             <Card className="@container/card">
                 <CardHeader>
-                    <CardDescription className="flex items-center gap-2">
-                        <IconPercentage className="size-4" />
-                        Percentage of product shipments
+                    <CardDescription className="flex items-center gap-2 text-xs md:text-sm font-bold text-[#202312]">
+                        <IconPercentage className="size-7" />
+                        Product shipments
                     </CardDescription>
-                    <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+                    <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl text-[#3b4125]/80">
                         {percentageShipments}%
                     </CardTitle>
-                    {/* 
-                    <CardAction>
-                        <Badge variant="outline">
-                            <IconTrendingUp />
-                            +4.5%
-                        </Badge>
-                    </CardAction>
-                    */}
                 </CardHeader>
-                {/*     
-                <CardFooter className="flex-col items-start gap-1.5 text-sm">
-                    <div className="line-clamp-1 flex gap-2 font-medium">
-                        Steady performance increase <IconTrendingUp className="size-4" />
-                    </div>
-                    <div className="text-muted-foreground">Meets growth projections</div>
-                </CardFooter>
-                */}
             </Card>
         </div>
     )

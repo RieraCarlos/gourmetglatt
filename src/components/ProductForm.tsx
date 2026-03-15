@@ -24,6 +24,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, initialBarcode, onCl
         barcode: initialBarcode || '',
         name: '',
         description: '',
+        category: '',
         stock: 0,
     });
     const [isScanning, setIsScanning] = useState(false);
@@ -35,6 +36,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, initialBarcode, onCl
                 barcode: product.barcode,
                 name: product.name,
                 description: product.description || '',
+                category: product.category || '',
                 stock: 0,
             });
         } else if (initialBarcode) {
@@ -53,7 +55,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, initialBarcode, onCl
                     id: product.id,
                     barcode: formData.barcode,
                     name: formData.name,
-                    description: formData.description
+                    description: formData.description,
+                    category: formData.category
                 })).unwrap();
             } else {
                 // Modo Creación: 
@@ -61,7 +64,8 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, initialBarcode, onCl
                 const newProduct = await dispatch(addProduct({
                     barcode: formData.barcode,
                     name: formData.name,
-                    description: formData.description
+                    description: formData.description,
+                    category: formData.category
                 })).unwrap();
 
                 // 2) Si hay stock inicial, registramos el movimiento que afectará el stock real
@@ -165,6 +169,21 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, initialBarcode, onCl
                         </div>
 
                         <div className="space-y-1.5">
+                            <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">Categoría</label>
+                            <div className="relative group">
+                                <Tag className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground group-focus-within:text-primary transition-colors" />
+                                <input
+                                    type="text"
+                                    required
+                                    value={formData.category}
+                                    onChange={(e) => setFormData(prev => ({ ...prev, category: e.target.value }))}
+                                    className="w-full pl-10 pr-4 py-3 bg-secondary/50 border border-border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"
+                                    placeholder="Eje: Bebidas, Lácteos, etc."
+                                />
+                            </div>
+                        </div>
+
+                        <div className="space-y-1.5">
                             <label className="text-xs font-bold text-muted-foreground uppercase tracking-wider ml-1">Descripción</label>
                             <div className="relative">
                                 <FileText className="absolute left-3 top-3 w-5 h-5 text-muted-foreground" />
@@ -186,7 +205,7 @@ const ProductForm: React.FC<ProductFormProps> = ({ product, initialBarcode, onCl
                                 disabled={!!product}
                                 min={0}
                                 value={formData.stock}
-                                onChange={(e) => setFormData(prev => ({ ...prev, stock: parseInt(e.target.value) || 0 }))}
+                                onChange={(e) => setFormData(prev => ({ ...prev, stock: parseInt(e.target.value) }))}
                                 className="w-full px-4 py-3 bg-secondary/50 border border-border rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all disabled:opacity-50 disabled:cursor-not-allowed font-medium text-lg"
                                 placeholder="0"
                             />

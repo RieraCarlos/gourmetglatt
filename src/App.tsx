@@ -7,7 +7,7 @@ import AdminDashboard from './pages/admin/AdminDashboard';
 import UserDashboard from './pages/user/PageSupervisor';
 import NotFound from './pages/NotFound';
 import { useAppSelector, useAppDispatch } from './app/hook';
-import { setAuth, setAuthReady, logout } from './features/auth/authSlice';
+import { setAuthReady, logout, fetchCurrentUserProfile } from './features/auth/authSlice';
 import { supabase } from './lib/supabase';
 import OfflineStatus from './components/OfflineStatus';
 import { Toaster } from 'sonner';
@@ -20,60 +20,25 @@ function App() {
   // PWA Service Worker Registration
   useRegisterSW({
     onNeedRefresh() {
-
       // En una app real se mostraría un Toast al usuario, pero reload asegura la última versión
       window.location.reload();
     },
     onOfflineReady() {
-
     },
   });
 
   useEffect(() => {
-
-
-    // Helper: sincronizar el perfil del servidor en segundo plano (fire-and-forget)
-    const syncProfileInBackground = async (session: any) => {
-      try {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', session.user.id)
-          .maybeSingle();
-
-
-        if (profile) {
-          dispatch(setAuth({
-            user: {
-              id: session.user.id,
-              email: session.user.email!,
-              role: profile.role,
-              name: profile.name,
-              avatar_url: profile.avatar_url,
-            },
-            session: session,
-          }));
-        }
-      } catch (err) {
-        console.error("[App.tsx] Background profile sync failed (non-blocking):", err);
-      }
-    };
-
     // Auth Bootstrap & Subscription (callback SÍNCRONO — sin async/await)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-
-
       if (event === 'INITIAL_SESSION') {
         if (!session) {
           // No hay sesión real → limpiar localStorage si tenía datos viejos
-
           dispatch(logout());
         } else {
           // 🔥 OPTIMISTIC AUTH BOOTSTRAP 🔥
           // Sesión válida confirmada. Redux ya tiene el 'user' del localStorage.
           // Disparamos la sincronización del perfil en segundo plano sin bloquear.
-
-          syncProfileInBackground(session);
+          dispatch(fetchCurrentUserProfile(session.user.id));
         }
         // SIEMPRE desbloquear la UI al finalizar INITIAL_SESSION
         dispatch(setAuthReady(true));
@@ -81,20 +46,18 @@ function App() {
       } else if (event === 'SIGNED_IN' && session) {
         // form-login.tsx ya actualizó Redux con el perfil completo
         // Solo sincronizamos por si acaso (ej: login desde otra pestaña)
-        syncProfileInBackground(session);
+        dispatch(fetchCurrentUserProfile(session.user.id));
 
       } else if (event === 'TOKEN_REFRESHED' && session) {
         // Token renovado en segundo plano — sincronizar perfil silenciosamente
-        syncProfileInBackground(session);
+        dispatch(fetchCurrentUserProfile(session.user.id));
 
       } else if (event === 'SIGNED_OUT') {
-
         dispatch(logout());
       }
     });
 
     return () => {
-
       subscription.unsubscribe();
     };
   }, [dispatch]);

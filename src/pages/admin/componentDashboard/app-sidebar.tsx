@@ -24,6 +24,7 @@ import { NavMain } from "./nav-main"
 import { NavSecondary } from "./nav-secondary"
 import { NavUser } from "./nav-user"
 import { useUserProfile } from "@/hooks/useUserProfile"
+import type { UserProfile } from "@/features/auth/authSlice"
 import {
     Sidebar,
     SidebarContent,
@@ -149,11 +150,14 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { user } = useUserProfile()
 
-    // Default user data while loading
-    const displayUser = user || {
-        name: "User",
-        email: "loading@example.com",
-        avatar: "/avatars/default.jpg",
+    // Default user data while loading - must match UserProfile type
+    const displayUser: UserProfile = user || {
+        id: "loading",
+        name: "Admin User",
+        email: "admin@gourmetglatt.com",
+        avatar_url: null,
+        role: "admin",
+        sector_id: null
     }
 
     return (

@@ -18,6 +18,7 @@ import { NavMain } from "./nav-main"
 import { NavSecondary } from "./nav-secondary"
 import { NavUser } from "./nav-user"
 import { useUserProfile } from "@/hooks/useUserProfile"
+import type { UserProfile } from "@/features/auth/authSlice"
 import {
     Sidebar,
     SidebarContent,
@@ -115,36 +116,48 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { user } = useUserProfile()
 
-    // Default user data while loading
-    const displayUser = user || {
+    // Default user data while loading (matching the UserProfile type)
+    const displayUser: UserProfile = user || {
+        id: "loading",
         name: "User",
         email: "loading@example.com",
-        avatar: "/avatars/default.jpg",
+        avatar_url: "/avatars/default.jpg",
+        role: "supervisor",
+        sector_id: null
     }
 
     return (
-        <Sidebar collapsible="offcanvas" {...props}>
-            <SidebarHeader>
+        <Sidebar
+            collapsible="icon"
+            {...props}
+            className="border-r border-[#3b4125]/20 transition-all duration-300 group-data-[collapsible=icon]:w-[68px]"
+        >
+            <SidebarHeader className="bg-[#202312] border-b border-[#3b4125]/10 py-4 rounded-t-lg">
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <SidebarMenuButton
                             asChild
-                            className="data-[slot=sidebar-menu-button]:p-1.5!"
+                            className="hover:bg-[#525834]/20 transition-colors h-12"
                         >
-                            <Link to="/supervisor">
-                                <IconInnerShadowTop className="size-5!" />
-                                <span className="text-base font-bold">GourmetGlatt</span>
+                            <Link to="/supervisor" className="flex items-center gap-3">
+                                <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-[#3b4125] text-white shadow-lg shadow-[#3b4125]/20 transition-transform group-hover:scale-105">
+                                    <IconInnerShadowTop className="size-5" />
+                                </div>
+                                <div className="grid flex-1 text-left leading-tight group-data-[collapsible=icon]:hidden">
+                                    <span className="truncate font-black text-white tracking-tight uppercase text-sm">GourmetGlatt</span>
+                                    <span className="truncate text-[10px] font-bold text-[#6E7647] tracking-widest uppercase opacity-70">PWA Inventory</span>
+                                </div>
                             </Link>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarHeader>
-            <SidebarContent>
+            <SidebarContent className="bg-[#202312] py-2">
                 <NavMain items={data.navMain} />
                 <NavDocuments items={data.documents} />
                 <NavSecondary items={data.navSecondary} className="mt-auto" />
             </SidebarContent>
-            <SidebarFooter>
+            <SidebarFooter className="bg-[#202312] border-t border-[#3b4125]/10  rounded-b-lg">
                 <NavUser user={displayUser} />
             </SidebarFooter>
         </Sidebar>
