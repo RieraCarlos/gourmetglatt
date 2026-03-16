@@ -2,7 +2,7 @@
 
 import { precacheAndRoute, cleanupOutdatedCaches } from 'workbox-precaching';
 import { registerRoute, NavigationRoute, setCatchHandler } from 'workbox-routing';
-import { StaleWhileRevalidate, CacheFirst, NetworkFirst } from 'workbox-strategies';
+import { NetworkFirst, CacheFirst } from 'workbox-strategies';
 import { ExpirationPlugin } from 'workbox-expiration';
 import { CacheableResponsePlugin } from 'workbox-cacheable-response';
 declare const self: ServiceWorkerGlobalScope & typeof globalThis;
@@ -28,7 +28,7 @@ self.addEventListener('message', (event: ExtendableMessageEvent) => {
 });
 
 // 2. CACHING STRATEGIES
-const CACHE_NAME_PREFIX = 'gg-v2';
+const CACHE_NAME_PREFIX = 'gg-v3';
 
 // Cache Images (CacheFirst)
 registerRoute(
@@ -50,7 +50,7 @@ registerRoute(
         request.destination === 'script' || 
         request.destination === 'style' || 
         request.destination === 'font',
-    new StaleWhileRevalidate({
+    new NetworkFirst({
         cacheName: `${CACHE_NAME_PREFIX}-assets`,
     })
 );
